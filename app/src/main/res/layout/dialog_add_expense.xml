@@ -27,7 +27,29 @@
         android:id="@+id/etCategory"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:hint="Category"
-        tools:layout_editor_absoluteX="0dp"
-        tools:layout_editor_absoluteY="89dp" />
-</androidx.constraintlayout.widget.ConstraintLayout>
+        android:layout_marginTop="12dp"
+        android:hint="Category">
+
+        <AutoCompleteTextView
+            android:id="@+id/etCategoryDropdown"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:inputType="none" />
+    </com.google.android.material.textfield.TextInputLayout>
+
+    <com.google.android.material.textfield.TextInputLayout
+        android:id="@+id/tilCustomCategory"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="12dp"
+        android:hint="Enter Custom Category"
+        android:visibility="gone">
+
+        <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/etCustomCategory"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:inputType="textCapWords" />
+    </com.google.android.material.textfield.TextInputLayout>
+
+</LinearLayout>
