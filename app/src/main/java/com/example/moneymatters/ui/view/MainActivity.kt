@@ -51,12 +51,25 @@ class MainActivity : AppCompatActivity() {
             .setView(dialogBinding.root)
             .setPositiveButton("Add") { _, _ ->
                 val title = dialogBinding.etTitle.text.toString()
-                val amount = dialogBinding.etAmount.text.toString().toDouble()
-                val category = dialogBinding.etCategory.text.toString()
-                val date = SimpleDateFormat("dd MM yyyy", Locale.getDefault()).format(Date())
+                val amount = dialogBinding.etAmount.text.toString().toDoubleOrNull()
+                val selectedCategory = dialogBinding.etCategoryDropdown.text.toString()
 
-                val expense = ExpenseModel(title = title, amount = amount, category = category, date = date)
-                viewModel.insertExpense(expense)
+                val finalCategory = if (selectedCategory == "Other") {
+                    val customCategory = dialogBinding.etCustomCategory.text.toString()
+                    if (customCategory.isNotEmpty() && !categoryList.contains(customCategory)) {
+                        // Add to list before "Other" to keep it at the bottom
+                        categoryList.add(categoryList.size - 1, customCategory)
+                    }
+                    customCategory
+                } else {
+                    selectedCategory
+                }
+
+                if (title.isNotEmpty() && amount != null && finalCategory.isNotEmpty()) {
+                    val date = SimpleDateFormat("dd MM yyyy", Locale.getDefault()).format(Date())
+                    val expense = ExpenseModel(title = title, amount = amount, category = finalCategory, date = date)
+                    viewModel.insertExpense(expense)
+                }
             }
             .setNegativeButton("Cancel", null)
             .show()
