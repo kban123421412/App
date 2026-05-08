@@ -22,4 +22,8 @@ interface ExpenseDao {
     @Query("SELECT SUM(amount) FROM ExpenseModel")
     fun getTotalAmount(): LiveData<Double>
 
+
+    @Query("SELECT category, SUM(amount) as total FROM ExpenseModel GROUP BY category")
+    fun getCategoryTotal(): LiveData<List<CategoryTotal>>
+
 }

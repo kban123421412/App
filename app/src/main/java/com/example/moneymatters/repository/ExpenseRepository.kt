@@ -9,6 +9,9 @@ class ExpenseRepository(private val dao:ExpenseDao) {
     val allExpenses: LiveData<List<ExpenseModel>> = dao.getAllExpenses()
     val totalAmount: LiveData<Double> = dao.getTotalAmount()
 
+    val categoryTotal: LiveData<List<CategoryTotal>> = dao.getCategoryTotal()
+
+
     suspend fun insertExpense(expense: ExpenseModel) {
         dao.insertExpense(expense)
 
