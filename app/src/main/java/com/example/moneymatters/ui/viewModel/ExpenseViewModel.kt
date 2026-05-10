@@ -9,6 +9,9 @@ import kotlinx.coroutines.launch
 import com.example.moneymatters.data.database.ExpenseDataBase
 import com.example.moneymatters.data.model.ExpenseModel
 import com.example.moneymatters.repository.ExpenseRepository
+import com.example.moneymatters.data.dao.CategoryTotal
+
+
 
 
 class ExpenseViewModel(application: Application) : AndroidViewModel(application) {
@@ -17,6 +20,8 @@ class ExpenseViewModel(application: Application) : AndroidViewModel(application)
 
     val allExpenses: LiveData<List<ExpenseModel>>
     val totalAmount: LiveData<Double>
+    val categoryTotals: LiveData<List<CategoryTotal>>
+
 
 
     init {
@@ -24,6 +29,7 @@ class ExpenseViewModel(application: Application) : AndroidViewModel(application)
         repository = ExpenseRepository(dao)
         allExpenses = repository.allExpenses
         totalAmount = repository.totalAmount
+        categoryTotals = repository.categoryTotals
 
     }
     fun insertExpense(expense: ExpenseModel) = viewModelScope.launch(Dispatchers.IO){
