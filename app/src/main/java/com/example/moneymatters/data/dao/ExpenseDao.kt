@@ -6,7 +6,10 @@ import com.example.moneymatters.data.model.ExpenseModel
 import androidx.lifecycle.LiveData
 import androidx.room.OnConflictStrategy
 
-
+data class CategoryTotal(
+    val category: String,
+    val total: Double
+    )
 @Dao
 interface ExpenseDao {
     @Insert(onConflict = OnConflictStrategy.ABORT)
