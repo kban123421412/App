@@ -10,7 +10,9 @@ import com.example.moneymatters.data.database.ExpenseDataBase
 import com.example.moneymatters.data.model.ExpenseModel
 import com.example.moneymatters.repository.ExpenseRepository
 import com.example.moneymatters.data.dao.CategoryTotal
-
+import com.example.moneymatters.data.model.GoalModel
+import com.example.moneymatters.data.dao.GoalDao
+import com.example.moneymatters.data.dao.ExpenseDao
 
 
 
@@ -22,16 +24,22 @@ class ExpenseViewModel(application: Application) : AndroidViewModel(application)
     val totalAmount: LiveData<Double>
     val categoryTotals: LiveData<List<CategoryTotal>>
 
+    val allGoals: LiveData<List<GoalModel>>
+
+
 
 
     init {
         val dao = ExpenseDataBase.getDatabase(application).expenseDao()
-        repository = ExpenseRepository(dao)
+        repository = ExpenseRepository(dao.expenseDao(), dao.goalDao())
         allExpenses = repository.allExpenses
         totalAmount = repository.totalAmount
         categoryTotals = repository.categoryTotals
+        allGoals = repository.allGoals
+
 
     }
+    //Expense Functions
     fun insertExpense(expense: ExpenseModel) = viewModelScope.launch(Dispatchers.IO){
         repository.insertExpense(expense)
 
@@ -40,6 +48,14 @@ class ExpenseViewModel(application: Application) : AndroidViewModel(application)
     fun deleteExpense(expense: ExpenseModel) = viewModelScope.launch(Dispatchers.IO){
         repository.deleteExpense(expense)
 
+    }
+
+    //Goal Functions
+    fun insertGoal(goal: GoalModel) = viewModelScope.launch(Dispatchers.IO){
+        repository.insertGoal(goal)
+    }
+    fun updateGoal(goal: GoalModel) = viewModelScope.launch(Dispatchers.IO){
+        repository.updateGoal(goal)
     }
 }
 
