@@ -6,12 +6,16 @@ import com.example.moneymatters.data.model.ExpenseModel
 import android.content.Context
 import androidx.room.RoomDatabase
 import androidx.room.Room
+import com.example.moneymatters.data.dao.GoalDao
+import com.example.moneymatters.data.model.GoalModel
 
 
 
-@Database(entities = [ExpenseModel::class], version = 1, exportSchema = false)
+@Database(entities = [ExpenseModel::class, GoalModel::class], version = 1, exportSchema = false)
 abstract class ExpenseDataBase: RoomDatabase() {
     abstract fun expenseDao(): ExpenseDao
+    abstract fun goalDao(): GoalDao
+
 
     companion object{
         @Volatile
@@ -23,7 +27,9 @@ abstract class ExpenseDataBase: RoomDatabase() {
                     context.applicationContext,
                     ExpenseDataBase::class.java,
                     "expense_database"
-                ).build()
+                )
+                .fallbackToDestructiveMigration()
+                .build()
                 INSTANCE = instance
                 instance
             }
