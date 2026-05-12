@@ -1,7 +1,7 @@
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
-    id("com.google.devtools.ksp") version "2.0.21-1.0.25"
+    id("com.google.devtools.ksp") version "2.0.21-1.0.27"
     id("org.jetbrains.kotlin.plugin.compose") version "2.0.21"
 }
 
@@ -41,6 +41,7 @@ dependencies {
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.viewmodel.ktx)
     implementation("androidx.lifecycle:lifecycle-livedata-ktx:2.8.7")
+    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.7")
 
     // Room
     implementation(libs.androidx.room.runtime)
