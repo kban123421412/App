@@ -1,7 +1,8 @@
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
-    id("com.google.devtools.ksp") version "2.0.21-1.0.27"
+    id("com.google.devtools.ksp") version "2.0.21-1.0.25"
+    id("org.jetbrains.kotlin.plugin.compose") version "2.0.21"
 }
 
 android {
@@ -11,20 +12,16 @@ android {
     defaultConfig {
         applicationId = "com.example.moneymatters"
         minSdk = 24
-        targetSdk = 36
+        targetSdk = 35
         versionCode = 1
         versionName = "1.0"
-
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
     buildTypes {
         release {
             isMinifyEnabled = false
-            proguardFiles(
-                getDefaultProguardFile("proguard-android-optimize.txt"),
-                "proguard-rules.pro"
-            )
+            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
         }
     }
     compileOptions {
@@ -35,37 +32,31 @@ android {
         jvmTarget = "11"
     }
     buildFeatures {
-        viewBinding = true
+        compose = true
+        viewBinding = false
     }
 }
 
 dependencies {
     implementation(libs.androidx.core.ktx)
-    implementation(libs.androidx.appcompat)
-    implementation(libs.material)
-    implementation(libs.androidx.activity)
-    implementation(libs.androidx.constraintlayout)
-
     implementation(libs.androidx.lifecycle.viewmodel.ktx)
-    implementation("androidx.lifecycle:lifecycle-livedata-ktx:2.8.7") // Match version with viewmodel
+    implementation("androidx.lifecycle:lifecycle-livedata-ktx:2.8.7")
 
     // Room
     implementation(libs.androidx.room.runtime)
     implementation(libs.androidx.room.ktx)
     ksp(libs.androidx.room.compiler)
 
-    //charts
+    // Jetpack Compose BOM & Libraries
+    val composeBom = platform("androidx.compose:compose-bom:2024.02.00")
+    implementation(composeBom)
+    implementation("androidx.compose.ui:ui")
+    implementation("androidx.compose.material3:material3")
+    implementation("androidx.activity:activity-compose:1.8.2")
+    implementation("androidx.navigation:navigation-compose:2.7.7")
+    implementation("androidx.compose.runtime:runtime-livedata") // Allows Compose to read Room LiveData
+    implementation("androidx.compose.material:material-icons-extended") // For UI Icons
+
+    // 3rd Party Chart -> donut chart
     implementation("com.github.PhilJay:MPAndroidChart:v3.1.0")
-    implementation("androidx.recyclerview:recyclerview:1.3.2")
-
-    //navigation
-    val nav_version = "2.8.5"
-    implementation("androidx.navigation:navigation-fragment-ktx:$nav_version")
-    implementation("androidx.navigation:navigation-ui-ktx:$nav_version")
-
-    //test
-
-    testImplementation(libs.junit)
-    androidTestImplementation(libs.androidx.junit)
-    androidTestImplementation(libs.androidx.espresso.core)
 }
