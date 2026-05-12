@@ -54,4 +54,3 @@ class GoalAdapter (private val onGoalClick: (GoalModel) -> Unit): RecyclerView.A
 
 
 
-}
