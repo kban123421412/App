@@ -22,9 +22,11 @@ import kotlin.math.exp
 
 @Composable
 fun ExpenseListScreen(viewModel: ExpenseViewModel) {
+
     //observes the room db
     val expense by viewModel.allExpenses.observeAsState(emptyList())
-    val totalAmount by viewModel.totalAmount.observeAsState(0.0)
+    val totalAmount by viewModel.totalAmount.observeAsState()
+    val safeTotalAmount = totalAmount ?: 0.0 //added safeTotalAmount due to app crashing on launch as the room db as null is returned
     var showDialog by remember { mutableStateOf(false) }
 
     //scafold to show basic screen structure
@@ -45,7 +47,7 @@ fun ExpenseListScreen(viewModel: ExpenseViewModel) {
         ) {
             //Displays total expense
             Text(
-                text = String.format("Total: £%.2f", totalAmount),
+                text = String.format("Total: £%.2f", safeTotalAmount), //changed from totalAmount to safeTotalAmount
                 fontSize = 24.sp,
                 fontWeight = FontWeight.Bold,
                 modifier = Modifier.padding(bottom = 16.dp)
