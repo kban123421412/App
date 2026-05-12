@@ -13,7 +13,7 @@ interface GoalDao{
     @Update
     fun updateGoal(goal: GoalModel)
 
-    @Query("SELECT * FROM GoalModel ORDER BY ID DESC")
+    @Query("SELECT * FROM goal_table ORDER BY ID DESC")
     fun getAllGoals(): LiveData<List<GoalModel>>
 
 }

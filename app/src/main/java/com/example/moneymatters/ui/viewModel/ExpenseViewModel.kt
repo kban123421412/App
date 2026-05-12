@@ -30,8 +30,8 @@ class ExpenseViewModel(application: Application) : AndroidViewModel(application)
 
 
     init {
-        val dao = ExpenseDataBase.getDatabase(application).expenseDao()
-        repository = ExpenseRepository(dao.expenseDao(), dao.goalDao())
+        val db = ExpenseDataBase.getDatabase(application)
+        repository = ExpenseRepository(db.expenseDao(), db.goalDao())
         allExpenses = repository.allExpenses
         totalAmount = repository.totalAmount
         categoryTotals = repository.categoryTotals
