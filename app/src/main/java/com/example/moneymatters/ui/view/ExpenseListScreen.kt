@@ -120,8 +120,8 @@ fun AddExpenseDialog(onDismiss: () -> Unit, onSave: (ExpenseModel) -> Unit) {
     //stores input
     var title by remember { mutableStateOf("") }
     var amount by remember { mutableStateOf("") }
-
     var category by remember { mutableStateOf("Food") }
+    var customCategory by remember { mutableStateOf("") }
     var expanded by remember { mutableStateOf(false) }
     val categories = listOf("Food", "Transport", "Entertainment", "Rent", "Shopping", "Other")
 
@@ -158,6 +158,15 @@ fun AddExpenseDialog(onDismiss: () -> Unit, onSave: (ExpenseModel) -> Unit) {
                         }
                     }
                 }
+                if (category == "Other") {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    OutlinedTextField(
+                        value = customCategory,
+                        onValueChange = { customCategory = it },
+                        label = { Text("Custom Category") }
+                    )
+                }
+
             }
         },
 
@@ -165,6 +174,7 @@ fun AddExpenseDialog(onDismiss: () -> Unit, onSave: (ExpenseModel) -> Unit) {
         confirmButton = {
             Button(onClick = {
                 val parsedAmount = amount.toDoubleOrNull()
+                val finalCategory = if(category == "Other") customCategory else category
                 if (title.isNotBlank() && parsedAmount != null) {
                     val date = SimpleDateFormat("dd MM yyyy", Locale.getDefault()).format(Date())
                     onSave(ExpenseModel(title = title, amount = parsedAmount, category = category, date = date))
