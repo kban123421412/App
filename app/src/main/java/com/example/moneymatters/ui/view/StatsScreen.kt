@@ -21,6 +21,8 @@ import com.github.mikephil.charting.charts.PieChart
 import com.github.mikephil.charting.data.PieData
 import com.github.mikephil.charting.data.PieDataSet
 import com.github.mikephil.charting.data.PieEntry
+import androidx.compose.ui.res.stringResource
+import com.example.moneymatters.R
 
 @Composable
 fun StatsScreen(viewModel: ExpenseViewModel) {
@@ -48,20 +50,27 @@ fun StatsScreen(viewModel: ExpenseViewModel) {
         ) {
 
             //title for donut chart
-            Text("Spending by Category", fontSize = 20.sp, fontWeight = FontWeight.Bold)
+           // Text("Spending by Category", fontSize = 20.sp, fontWeight = FontWeight.Bold)
+
+            Text(
+                stringResource(id = R.string.spending_category),
+                fontSize = 20.sp,
+                fontWeight = FontWeight.Bold
+            )
 
             // 3rd party chart -> donut chart but within jetpack compose
             AndroidView(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(250.dp)
+                    .heightIn(250.dp)
+                    .weight(1f)
                     .padding(vertical = 16.dp),
 
                 //creates the donut chart and sets the title, removes the default description and enables the legend
                 factory = { context ->
                     PieChart(context).apply {
                         isDrawHoleEnabled = true
-                        centerText = "Expenses"
+                        centerText = context.getString(R.string.expenses_chart_center)
                         description.isEnabled = false
                         legend.isEnabled = true
                     }
@@ -88,7 +97,14 @@ fun StatsScreen(viewModel: ExpenseViewModel) {
                 }
             )
 
-            Text("My Savings Goals", fontSize = 20.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(bottom = 8.dp))
+            //Text("My Savings Goals", fontSize = 20.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(bottom = 8.dp))
+
+            Text(
+                stringResource(id = R.string.savings_goals),
+                fontSize = 20.sp,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.padding(bottom = 8.dp)
+            )
 
             // LazyColumn for Goals
             LazyColumn(modifier = Modifier.fillMaxSize()) {
@@ -116,7 +132,8 @@ fun StatsScreen(viewModel: ExpenseViewModel) {
             goal = goal,
             onDismiss = { selectedGoalForFunds = null },
             onSave = { amountToAdd ->
-                goal.currentAmount += amountToAdd
+                //goal.currentAmount += amountToAdd <-- changed this as goals would not update after you add a fund to it
+                val updatedGoal = goal.copy(currentAmount = goal.currentAmount + amountToAdd)
                 viewModel.updateGoal(goal)
                 selectedGoalForFunds = null
             }
@@ -132,14 +149,14 @@ fun GoalItemCard(goal: GoalModel, onClick: () -> Unit) {
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 4.dp)
-            .clickable { onClick() }, // Makes the whole card tappable
+            .clickable { onClick() }, //makes card tappable
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Text(text = goal.title, fontWeight = FontWeight.Bold, fontSize = 18.sp)
             Spacer(modifier = Modifier.height(8.dp))
             LinearProgressIndicator(
-                progress = { (goal.currentAmount / goal.targetAmount).toFloat().coerceIn(0f, 1f) },
+                progress = { (goal.currentAmount / goal.targetAmount).toFloat().coerceIn(0f, 1f) }, //prevents exceeding or underflowing goal (stays between 1 and 0)
                 modifier = Modifier.fillMaxWidth()
             )
             Text(
@@ -176,6 +193,8 @@ fun AddGoalDialog(onDismiss: () -> Unit, onSave: (GoalModel) -> Unit) {
                 }
             }) { Text("Create") }
         },
+
+        //closes without saving
         dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } }
     )
 }
