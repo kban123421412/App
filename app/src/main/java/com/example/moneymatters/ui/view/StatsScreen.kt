@@ -92,11 +92,17 @@ fun StatsScreen(viewModel: ExpenseViewModel) {
                             valueTextSize = 14f
                         }
                         chart.data = PieData(dataSet)
+                        chart.notifyDataSetChanged()
                         chart.invalidate() //refreshes chart
+                    }else{
+                        //if db is empty clear chart
+                        chart.clear()
+                        chart.invalidate()
                     }
                 }
             )
 
+            //Old hardcoded texts
             //Text("My Savings Goals", fontSize = 20.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(bottom = 8.dp))
 
             Text(
@@ -134,7 +140,7 @@ fun StatsScreen(viewModel: ExpenseViewModel) {
             onSave = { amountToAdd ->
                 //goal.currentAmount += amountToAdd <-- changed this as goals would not update after you add a fund to it
                 val updatedGoal = goal.copy(currentAmount = goal.currentAmount + amountToAdd)
-                viewModel.updateGoal(goal)
+                viewModel.updateGoal(updatedGoal)
                 selectedGoalForFunds = null
             }
         )
