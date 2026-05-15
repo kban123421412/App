@@ -60,4 +60,7 @@ dependencies {
 
     // 3rd Party Chart -> donut chart
     implementation("com.github.PhilJay:MPAndroidChart:v3.1.0")
+
+    // WorkManager (Notifications)
+    implementation("androidx.work:work-runtime-ktx:2.9.0")
 }
