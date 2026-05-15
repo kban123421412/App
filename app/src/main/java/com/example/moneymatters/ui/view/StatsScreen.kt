@@ -24,6 +24,9 @@ import com.github.mikephil.charting.data.PieEntry
 import androidx.compose.ui.res.stringResource
 import com.example.moneymatters.R
 
+
+
+
 @Composable
 fun StatsScreen(viewModel: ExpenseViewModel) {
 
@@ -62,8 +65,9 @@ fun StatsScreen(viewModel: ExpenseViewModel) {
             AndroidView(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .heightIn(250.dp)
-                    .weight(1f)
+                    //.heightIn(250.dp)
+                    .height(250.dp)
+                    //.weight(1f) <-- attempted to cofigure for tablet, but this gives 0 pixels of space to charts
                     .padding(vertical = 16.dp),
 
                 //creates the donut chart and sets the title, removes the default description and enables the legend
@@ -113,8 +117,8 @@ fun StatsScreen(viewModel: ExpenseViewModel) {
             )
 
             // LazyColumn for Goals
-            LazyColumn(modifier = Modifier.fillMaxSize()) {
-                items(goals) { goal ->
+            LazyColumn(modifier = Modifier.fillMaxSize().weight(1f)) { //added .weight() to the lazy colum so
+                items(goals) { goal ->                                  //it takes the left over space correctly
                     GoalItemCard(goal = goal, onClick = { selectedGoalForFunds = goal })
                 }
             }
@@ -161,8 +165,18 @@ fun GoalItemCard(goal: GoalModel, onClick: () -> Unit) {
         Column(modifier = Modifier.padding(16.dp)) {
             Text(text = goal.title, fontWeight = FontWeight.Bold, fontSize = 18.sp)
             Spacer(modifier = Modifier.height(8.dp))
+
+            val safeProgress = if (goal.targetAmount >0){
+                (goal.currentAmount / goal.targetAmount).toFloat()
+            }else{
+                0f
+            }
             LinearProgressIndicator(
-                progress = { (goal.currentAmount / goal.targetAmount).toFloat().coerceIn(0f, 1f) }, //prevents exceeding or underflowing goal (stays between 1 and 0)
+                progress = {safeProgress.coerceIn(0f,1f)}, //prevents exceeding or underflowing goal (stays between 1 and 0)
+
+                //created a divide by 0 causing stats screen to crash
+                //progress = { (goal.currentAmount / goal.targetAmount).toFloat().coerceIn(0f, 1f) },
+
                 modifier = Modifier.fillMaxWidth()
             )
             Text(
