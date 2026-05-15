@@ -23,8 +23,8 @@ import com.github.mikephil.charting.data.PieDataSet
 import com.github.mikephil.charting.data.PieEntry
 import androidx.compose.ui.res.stringResource
 import com.example.moneymatters.R
-
-
+import com.example.moneymatters.util.NotificationHelper
+import com.example.moneymatters.util.NotificationHelper.showGoalCompletedNotification
 
 
 @Composable
@@ -138,6 +138,7 @@ fun StatsScreen(viewModel: ExpenseViewModel) {
 
     //displays add funds dialog for specific goal
     selectedGoalForFunds?.let { goal ->
+        val context = androidx.compose.ui.platform.LocalContext.current //context so we can send notification
         AddFundsDialog(
             goal = goal,
             onDismiss = { selectedGoalForFunds = null },
@@ -145,6 +146,11 @@ fun StatsScreen(viewModel: ExpenseViewModel) {
                 //goal.currentAmount += amountToAdd <-- changed this as goals would not update after you add a fund to it
                 val updatedGoal = goal.copy(currentAmount = goal.currentAmount + amountToAdd)
                 viewModel.updateGoal(updatedGoal)
+
+                //checks if gaol is completed
+                if(updatedGoal.currentAmount >= updatedGoal.targetAmount && goal.currentAmount < goal.targetAmount){
+                    showGoalCompletedNotification(context, updatedGoal.title)
+                }
                 selectedGoalForFunds = null
             }
         )
