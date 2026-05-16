@@ -1,85 +1,85 @@
 package com.example.moneymatters.ui.view
 
-import android.R.attr.onClick
 import android.graphics.Color as AndroidColor
+import java.text.SimpleDateFormat
+import java.util.*
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.livedata.observeAsState
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
+import androidx.compose.ui.res.stringResource
+import com.example.moneymatters.R
 import com.example.moneymatters.data.model.GoalModel
+import com.example.moneymatters.data.model.ExpenseModel
 import com.example.moneymatters.ui.viewModel.ExpenseViewModel
 import com.github.mikephil.charting.charts.PieChart
 import com.github.mikephil.charting.data.PieData
 import com.github.mikephil.charting.data.PieDataSet
 import com.github.mikephil.charting.data.PieEntry
-import androidx.compose.ui.res.stringResource
-import com.example.moneymatters.R
-import com.example.moneymatters.util.NotificationHelper
 import com.example.moneymatters.util.NotificationHelper.showGoalCompletedNotification
-import java.text.SimpleDateFormat
-import java.util.*
-import androidx.compose.material.icons.filled.*
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.graphics.Color
 
+// Tracks which time filter chip is currently selected
+enum class TimeFilter { ALL, WEEK, MONTH, YEAR }
 
-enum class TimeFilter{ALL, WEEK, MONTH, YEAR}
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun StatsScreen(viewModel: ExpenseViewModel) {
 
     //observes the totals and saving goals
     val categoryTotals by viewModel.categoryTotals.observeAsState(emptyList())
     val goals by viewModel.allGoals.observeAsState(emptyList())
+
+    // Observes all expenses to calculate the date filters locally
     val allExpenses by viewModel.allExpenses.observeAsState(emptyList())
-    var selectedFilter by remember{mutableStateOf(TimeFilter.ALL)}
-
-    //calculate dates for filter
-    val filteredExpenses by remember(allExpenses, selectedFilter){
-        derivedStateOf {
-            val format = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
-            val now = Calender.getInstance().timeInMillis()
-
-            allExpenses.filter{expense ->
-                if(selectedFilter == TimeFilter.ALL) return@filter true
-                try{
-                    val expenseDate = format.parse(expense.date)?.time: 0L
-                    val dayDiff = (now - expenseDate) * (1000 * 60 * 60 * 24)
-                    when(selectedFilter){
-                        timeFilter.WEEK -> dayDiff <= 7
-                        timeFilter.MONTH -> dayDiff <= 30
-                        timeFilter.YEAR -> dayDiff <= 365
-                        else -> true
-                    }
-                }catch(e: Exception){true}
-            }.sortedByDescending {
-                try{
-                    format.parse(it.date)?.time?: 0L
-                }catch (e: Exception){0L}
-            }
-        }
-    }
-
-    val pieEntries by remember(filteredExpenses) {
-        derivedSateOf{
-            filteredExpenses.groupBy { it.category }.map{
-                PieEntry(it.value.sumOf{exp -> exp.amount}.toFloat(), it.key)}
-        }
-    }
-
     val context = androidx.compose.ui.platform.LocalContext.current //context so we can send notification
 
     var showAddGoalDialog by remember { mutableStateOf(false) }
     var selectedGoalForFunds by remember { mutableStateOf<GoalModel?>(null) }
+    var selectedFilter by remember { mutableStateOf(TimeFilter.ALL) }
+
+    // DYNAMIC FILTERING: Calculates the dates and filters the list automatically
+    val filteredExpenses by remember(allExpenses, selectedFilter) {
+        derivedStateOf {
+            val format = SimpleDateFormat("dd MM yyyy", Locale.getDefault())
+            val now = Calendar.getInstance().timeInMillis
+
+            allExpenses.filter { expense ->
+                if (selectedFilter == TimeFilter.ALL) return@filter true
+                try {
+                    val expenseDate = format.parse(expense.date)?.time ?: 0L
+                    val daysDiff = (now - expenseDate) / (1000 * 60 * 60 * 24)
+                    when (selectedFilter) {
+                        TimeFilter.WEEK -> daysDiff <= 7
+                        TimeFilter.MONTH -> daysDiff <= 30
+                        TimeFilter.YEAR -> daysDiff <= 365
+                        else -> true
+                    }
+                } catch (e: Exception) { true }
+            }.sortedByDescending {
+                try { format.parse(it.date)?.time ?: 0L } catch(e: Exception) { 0L }
+            }
+        }
+    }
+
+    // Groups the dynamic filtered data for presentation on the pie chart slices
+    val pieEntries by remember(filteredExpenses) {
+        derivedStateOf {
+            filteredExpenses.groupBy { it.category }
+                .map { PieEntry(it.value.sumOf { exp -> exp.amount }.toFloat(), it.key) }
+        }
+    }
 
     //Scaffold for screen structure and buttons
     Scaffold(
@@ -89,111 +89,120 @@ fun StatsScreen(viewModel: ExpenseViewModel) {
             }
         }
     ) { paddingValues ->
-        Column(
+        // Unified LazyColumn so your whole screen handles scrolling perfectly together
+        LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
-                .padding(16.dp)
+                .padding(horizontal = 16.dp)
         ) {
+            item {
+                Spacer(modifier = Modifier.height(16.dp))
 
-            //title for donut chart
-           // Text("Spending by Category", fontSize = 20.sp, fontWeight = FontWeight.Bold)
+                //title for donut chart
+                // Text("Spending by Category", fontSize = 20.sp, fontWeight = FontWeight.Bold)
 
-            Text(
-                stringResource(id = R.string.spending_category),
-                fontSize = 20.sp,
-                fontWeight = FontWeight.Bold
-            )
+                Text(
+                    stringResource(id = R.string.spending_category),
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.Bold
+                )
 
-            //filter buttons
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 8.dp),
-                horizontalArrangement = Arrangement.SpaceEvenly
-            ){
-                FilterChip(selected = selectedFilter == timerFilter.ALL, onClick() = {selectedFilter = TimeFilter.ALL}, label ={Text("ALL")})
-                FilterChip(selected = selectedFilter == timerFilter.WEEK, onClick() = {selectedFilter = TimeFilter.WEEK}, label ={Text("WEEK")})
-                FilterChip(selected = selectedFilter == timerFilter.MONTH, onClick() = {selectedFilter = TimeFilter.MONTH}, label ={Text("MONTH")})
-                FilterChip(selected = selectedFilter == timerFilter.YEAR, onClick() = {selectedFilter = TimeFilter.YEAR}, label ={Text("YEAR")})
+                // Time Filter Selection Buttons
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 8.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    FilterChip(selected = selectedFilter == TimeFilter.ALL, onClick = { selectedFilter = TimeFilter.ALL }, label = { Text("All") })
+                    FilterChip(selected = selectedFilter == TimeFilter.WEEK, onClick = { selectedFilter = TimeFilter.WEEK }, label = { Text("Week") })
+                    FilterChip(selected = selectedFilter == TimeFilter.MONTH, onClick = { selectedFilter = TimeFilter.MONTH }, label = { Text("Month") })
+                    FilterChip(selected = selectedFilter == TimeFilter.YEAR, onClick = { selectedFilter = TimeFilter.YEAR }, label = { Text("Year") })
+                }
+
+                // 3rd party chart -> donut chart but within jetpack compose
+                AndroidView(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        //.heightIn(250.dp)
+                        .height(250.dp)
+                        //.weight(1f) <-- attempted to cofigure for tablet, but this gives 0 pixels of space to charts
+                        .padding(vertical = 16.dp),
+
+                    //creates the donut chart and sets the title, removes the default description and enables the legend
+                    factory = { factoryContext ->
+                        PieChart(factoryContext).apply {
+                            isDrawHoleEnabled = true
+                            centerText = factoryContext.getString(R.string.expenses_chart_center)
+                            description.isEnabled = false
+                            legend.isEnabled = true
+                        }
+                    },
+
+                    //updates chart if categories change
+                    update = { chart ->
+                        if (pieEntries.isNotEmpty()) {
+                            val dataSet = PieDataSet(pieEntries, "").apply {
+                                colors = listOf(
+                                    AndroidColor.CYAN,
+                                    AndroidColor.MAGENTA,
+                                    AndroidColor.YELLOW,
+                                    AndroidColor.GREEN,
+                                    AndroidColor.LTGRAY
+                                )
+                                valueTextSize = 14f
+                            }
+                            chart.data = PieData(dataSet)
+                            chart.notifyDataSetChanged()
+                            chart.invalidate() //refreshes chart
+                        } else {
+                            //if db is empty clear chart
+                            chart.clear()
+                            chart.invalidate()
+                        }
+                    }
+                )
             }
 
-            // 3rd party chart -> donut chart but within jetpack compose
-            AndroidView(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    //.heightIn(250.dp)
-                    .height(250.dp)
-                    //.weight(1f) <-- attempted to cofigure for tablet, but this gives 0 pixels of space to charts
-                    .padding(vertical = 16.dp),
-
-                //creates the donut chart and sets the title, removes the default description and enables the legend
-                factory = { context ->
-                    PieChart(context).apply {
-                        isDrawHoleEnabled = true
-                        centerText = context.getString(R.string.expenses_chart_center)
-                        description.isEnabled = false
-                        legend.isEnabled = true
-                    }
-                },
-
-                //updates chart if categories change
-                // NEW: Updated to use 'pieEntries' instead of 'categoryTotals'
-                update = { chart ->
-                    if (pieEntries.isNotEmpty()) {
-                        val dataSet = PieDataSet(pieEntries, "").apply {
-                            colors = listOf(
-                                AndroidColor.CYAN,
-                                AndroidColor.MAGENTA,
-                                AndroidColor.YELLOW,
-                                AndroidColor.GREEN,
-                                AndroidColor.LTGRAY
-                            )
-                            valueTextSize = 14f
-                        }
-                        chart.data = PieData(dataSet)
-                        chart.notifyDataSetChanged()
-                        chart.invalidate() //refreshes chart
-                    } else {
-                        //id db empty then we clear the chart
-                        chart.clear()
-                        chart.invalidate()
-                    }
+            // Sub-Section: Interactive list of items based on filter selection
+            if (filteredExpenses.isNotEmpty()) {
+                item {
+                    Text(
+                        text = "Filtered Expenses",
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(top = 8.dp, bottom = 8.dp)
+                    )
                 }
-            )
+                items(filteredExpenses) { expense ->
+                    SmallExpenseItem(expense = expense)
+                }
+            }
 
-            //dynamic list of filtered expenses
-            if(filteredExpenses.isEmpty()){
+            item {
+                Spacer(modifier = Modifier.height(16.dp))
+
+                //Old hardcoded texts
+                //Text("My Savings Goals", fontSize = 20.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(bottom = 8.dp))
+
                 Text(
-                    "Filtered Expenses",
+                    stringResource(id = R.string.savings_goals),
                     fontSize = 20.sp,
                     fontWeight = FontWeight.Bold,
-                    modifier = Modifier.padding(bottom = 8.dp, top = 8.dp)
+                    modifier = Modifier.padding(bottom = 8.dp)
                 )
-                lazyColumn(
-                    modifier = Modifier.fillMaxSize().heightIn(max = 200.dp)
-                ){
-                    Items(filteredExpenses){expense ->
-                        SmallExpenseItem(expense = expense))
-                }
-
             }
 
-            //Old hardcoded texts
-            //Text("My Savings Goals", fontSize = 20.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(bottom = 8.dp))
-
-            Text(
-                stringResource(id = R.string.savings_goals),
-                fontSize = 20.sp,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.padding(bottom = 8.dp)
-            )
-
             // LazyColumn for Goals
-            LazyColumn(modifier = Modifier.fillMaxSize().weight(1f)) { //added .weight() to the lazy colum so
-                items(goals) { goal ->                                  //it takes the left over space correctly
-                    GoalItemCard(goal = goal, onClick = { selectedGoalForFunds = goal })
-                }
+            //added .weight() to the lazy colum so
+            //it takes the left over space correctly
+            items(goals) { goal ->
+                GoalItemCard(goal = goal, onClick = { selectedGoalForFunds = goal })
+            }
+
+            item {
+                Spacer(modifier = Modifier.height(80.dp))
             }
         }
     }
@@ -219,13 +228,48 @@ fun StatsScreen(viewModel: ExpenseViewModel) {
                 val updatedGoal = goal.copy(currentAmount = goal.currentAmount + amountToAdd)
                 viewModel.updateGoal(updatedGoal)
 
-                //checks if gaol is completed
+                //checks if goal is completed
                 if(updatedGoal.currentAmount >= updatedGoal.targetAmount && goal.currentAmount < goal.targetAmount){
                     showGoalCompletedNotification(context, updatedGoal.title)
                 }
                 selectedGoalForFunds = null
             }
         )
+    }
+}
+
+// Custom layout representation for items filtered down below the pie display
+@Composable
+fun SmallExpenseItem(expense: ExpenseModel) {
+    val icon = when (expense.category) {
+        "Food" -> Icons.Filled.Fastfood
+        "Transport" -> Icons.Filled.DirectionsCar
+        "Entertainment" -> Icons.Filled.Movie
+        "Rent" -> Icons.Filled.Home
+        "Shopping" -> Icons.Filled.ShoppingCart
+        else -> Icons.Filled.AttachMoney
+    }
+
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 6.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = expense.category,
+            tint = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.size(32.dp)
+        )
+        Spacer(modifier = Modifier.width(16.dp))
+
+        Column(modifier = Modifier.weight(1f)) {
+            Text(text = expense.title, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+            Text(text = expense.date, fontSize = 12.sp, color = Color.Gray)
+        }
+
+        Text(text = String.format("£%.2f", expense.amount), fontWeight = FontWeight.Bold, fontSize = 16.sp)
     }
 }
 
@@ -244,13 +288,13 @@ fun GoalItemCard(goal: GoalModel, onClick: () -> Unit) {
             Text(text = goal.title, fontWeight = FontWeight.Bold, fontSize = 18.sp)
             Spacer(modifier = Modifier.height(8.dp))
 
-            val safeProgress = if (goal.targetAmount >0){
+            val safeProgress = if (goal.targetAmount > 0){
                 (goal.currentAmount / goal.targetAmount).toFloat()
             }else{
                 0f
             }
             LinearProgressIndicator(
-                progress = {safeProgress.coerceIn(0f,1f)}, //prevents exceeding or underflowing goal (stays between 1 and 0)
+                progress = { safeProgress.coerceIn(0f,1f) }, //prevents exceeding or underflowing goal (stays between 1 and 0)
 
                 //created a divide by 0 causing stats screen to crash
                 //progress = { (goal.currentAmount / goal.targetAmount).toFloat().coerceIn(0f, 1f) },
@@ -317,40 +361,4 @@ fun AddFundsDialog(goal: GoalModel, onDismiss: () -> Unit, onSave: (Double) -> U
         },
         dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } }
     )
-}
-
-
-@Composable
-fun SmallExpenseItem(expense: ExpenseModel) {
-    // Selects an icon based on the category
-    val icon = when (expense.category) {
-        "Food" -> Icons.Filled.Fastfood
-        "Transport" -> Icons.Filled.DirectionsCar
-        "Entertainment" -> Icons.Filled.Movie
-        "Rent" -> Icons.Filled.Home
-        "Shopping" -> Icons.Filled.ShoppingCart
-        else -> Icons.Filled.AttachMoney
-    }
-
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 6.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Icon(
-            imageVector = icon,
-            contentDescription = expense.category,
-            tint = MaterialTheme.colorScheme.primary,
-            modifier = Modifier.size(32.dp)
-        )
-        Spacer(modifier = Modifier.width(16.dp))
-
-        Column(modifier = Modifier.weight(1f)) {
-            Text(text = expense.title, fontWeight = FontWeight.Bold, fontSize = 16.sp)
-            Text(text = expense.date, fontSize = 12.sp, color = Color.Gray)
-        }
-
-        Text(text = String.format("£%.2f", expense.amount), fontWeight = FontWeight.Bold, fontSize = 16.sp)
-    }
 }
