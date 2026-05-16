@@ -1,5 +1,6 @@
 package com.example.moneymatters.ui.view
 
+import android.R.attr.onClick
 import android.graphics.Color as AndroidColor
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -25,14 +26,57 @@ import androidx.compose.ui.res.stringResource
 import com.example.moneymatters.R
 import com.example.moneymatters.util.NotificationHelper
 import com.example.moneymatters.util.NotificationHelper.showGoalCompletedNotification
+import java.text.SimpleDateFormat
+import java.util.*
+import androidx.compose.material.icons.filled.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.graphics.Color
 
 
+enum class TimeFilter{ALL, WEEK, MONTH, YEAR}
 @Composable
 fun StatsScreen(viewModel: ExpenseViewModel) {
 
     //observes the totals and saving goals
     val categoryTotals by viewModel.categoryTotals.observeAsState(emptyList())
     val goals by viewModel.allGoals.observeAsState(emptyList())
+    val allExpenses by viewModel.allExpenses.observeAsState(emptyList())
+    var selectedFilter by remember{mutableStateOf(TimeFilter.ALL)}
+
+    //calculate dates for filter
+    val filteredExpenses by remember(allExpenses, selectedFilter){
+        derivedStateOf {
+            val format = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
+            val now = Calender.getInstance().timeInMillis()
+
+            allExpenses.filter{expense ->
+                if(selectedFilter == TimeFilter.ALL) return@filter true
+                try{
+                    val expenseDate = format.parse(expense.date)?.time: 0L
+                    val dayDiff = (now - expenseDate) * (1000 * 60 * 60 * 24)
+                    when(selectedFilter){
+                        timeFilter.WEEK -> dayDiff <= 7
+                        timeFilter.MONTH -> dayDiff <= 30
+                        timeFilter.YEAR -> dayDiff <= 365
+                        else -> true
+                    }
+                }catch(e: Exception){true}
+            }.sortedByDescending {
+                try{
+                    format.parse(it.date)?.time?: 0L
+                }catch (e: Exception){0L}
+            }
+        }
+    }
+
+    val pieEntries by remember(filteredExpenses) {
+        derivedSateOf{
+            filteredExpenses.groupBy { it.category }.map{
+                PieEntry(it.value.sumOf{exp -> exp.amount}.toFloat(), it.key)}
+        }
+    }
+
+    val context = androidx.compose.ui.platform.LocalContext.current //context so we can send notification
 
     var showAddGoalDialog by remember { mutableStateOf(false) }
     var selectedGoalForFunds by remember { mutableStateOf<GoalModel?>(null) }
@@ -61,6 +105,19 @@ fun StatsScreen(viewModel: ExpenseViewModel) {
                 fontWeight = FontWeight.Bold
             )
 
+            //filter buttons
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 8.dp),
+                horizontalArrangement = Arrangement.SpaceEvenly
+            ){
+                FilterChip(selected = selectedFilter == timerFilter.ALL, onClick() = {selectedFilter = TimeFilter.ALL}, label ={Text("ALL")})
+                FilterChip(selected = selectedFilter == timerFilter.WEEK, onClick() = {selectedFilter = TimeFilter.WEEK}, label ={Text("WEEK")})
+                FilterChip(selected = selectedFilter == timerFilter.MONTH, onClick() = {selectedFilter = TimeFilter.MONTH}, label ={Text("MONTH")})
+                FilterChip(selected = selectedFilter == timerFilter.YEAR, onClick() = {selectedFilter = TimeFilter.YEAR}, label ={Text("YEAR")})
+            }
+
             // 3rd party chart -> donut chart but within jetpack compose
             AndroidView(
                 modifier = Modifier
@@ -81,30 +138,46 @@ fun StatsScreen(viewModel: ExpenseViewModel) {
                 },
 
                 //updates chart if categories change
+                // NEW: Updated to use 'pieEntries' instead of 'categoryTotals'
                 update = { chart ->
-                    if (categoryTotals.isNotEmpty()) {
-                        val entries = categoryTotals.map { PieEntry(it.total.toFloat(), it.category) }
-                        val dataSet = PieDataSet(entries, "").apply {
-
-                            colors = listOf(AndroidColor.CYAN,
-                                            AndroidColor.MAGENTA,
-                                            AndroidColor.YELLOW,
-                                            AndroidColor.GREEN,
-                                            AndroidColor.LTGRAY
-                                        )
-
+                    if (pieEntries.isNotEmpty()) {
+                        val dataSet = PieDataSet(pieEntries, "").apply {
+                            colors = listOf(
+                                AndroidColor.CYAN,
+                                AndroidColor.MAGENTA,
+                                AndroidColor.YELLOW,
+                                AndroidColor.GREEN,
+                                AndroidColor.LTGRAY
+                            )
                             valueTextSize = 14f
                         }
                         chart.data = PieData(dataSet)
                         chart.notifyDataSetChanged()
                         chart.invalidate() //refreshes chart
-                    }else{
-                        //if db is empty clear chart
+                    } else {
+                        //id db empty then we clear the chart
                         chart.clear()
                         chart.invalidate()
                     }
                 }
             )
+
+            //dynamic list of filtered expenses
+            if(filteredExpenses.isEmpty()){
+                Text(
+                    "Filtered Expenses",
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(bottom = 8.dp, top = 8.dp)
+                )
+                lazyColumn(
+                    modifier = Modifier.fillMaxSize().heightIn(max = 200.dp)
+                ){
+                    Items(filteredExpenses){expense ->
+                        SmallExpenseItem(expense = expense))
+                }
+
+            }
 
             //Old hardcoded texts
             //Text("My Savings Goals", fontSize = 20.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(bottom = 8.dp))
@@ -138,7 +211,6 @@ fun StatsScreen(viewModel: ExpenseViewModel) {
 
     //displays add funds dialog for specific goal
     selectedGoalForFunds?.let { goal ->
-        val context = androidx.compose.ui.platform.LocalContext.current //context so we can send notification
         AddFundsDialog(
             goal = goal,
             onDismiss = { selectedGoalForFunds = null },
@@ -245,4 +317,40 @@ fun AddFundsDialog(goal: GoalModel, onDismiss: () -> Unit, onSave: (Double) -> U
         },
         dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } }
     )
+}
+
+
+@Composable
+fun SmallExpenseItem(expense: ExpenseModel) {
+    // Selects an icon based on the category
+    val icon = when (expense.category) {
+        "Food" -> Icons.Filled.Fastfood
+        "Transport" -> Icons.Filled.DirectionsCar
+        "Entertainment" -> Icons.Filled.Movie
+        "Rent" -> Icons.Filled.Home
+        "Shopping" -> Icons.Filled.ShoppingCart
+        else -> Icons.Filled.AttachMoney
+    }
+
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 6.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = expense.category,
+            tint = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.size(32.dp)
+        )
+        Spacer(modifier = Modifier.width(16.dp))
+
+        Column(modifier = Modifier.weight(1f)) {
+            Text(text = expense.title, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+            Text(text = expense.date, fontSize = 12.sp, color = Color.Gray)
+        }
+
+        Text(text = String.format("£%.2f", expense.amount), fontWeight = FontWeight.Bold, fontSize = 16.sp)
+    }
 }
