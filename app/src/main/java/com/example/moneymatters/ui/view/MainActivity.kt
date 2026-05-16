@@ -70,12 +70,12 @@ fun MainScreenApp() {
     )
 
     val permissionLauncher = rememberLauncherForActivityResult(
-        contract  = android.activity.result.contract.ActivityResultContracts.RequestPermission(),
+        contract  = ActivityResultContracts.RequestPermission(),
     ){isGranted ->}
 
     LaunchedEffect(Unit){
-        if(android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU){
-            permissionLauncher.launch(android.Manifest.permission.POST_NOTIFICATIONS)
+        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU){
+            permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
 
         }
     }
