@@ -14,8 +14,6 @@ import com.example.moneymatters.data.model.ExpenseModel
 import com.example.moneymatters.repository.ExpenseRepository
 import com.example.moneymatters.data.dao.CategoryTotal
 import com.example.moneymatters.data.model.GoalModel
-import com.example.moneymatters.data.dao.GoalDao
-import com.example.moneymatters.data.dao.ExpenseDao
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -27,26 +25,17 @@ class ExpenseViewModel(application: Application) : AndroidViewModel(application)
     val allExpenses: LiveData<List<ExpenseModel>>
     val totalAmount: LiveData<Double>
     val categoryTotals: LiveData<List<CategoryTotal>>
-
     val allGoals: LiveData<List<GoalModel>>
 
-    //State trackers for the settings panel
+    //will save preferences permanently
     private val prefs = application.getSharedPreferences("app_prefs", android.content.Context.MODE_PRIVATE)
+
     var isNotificationsEnabled by mutableStateOf(prefs.getBoolean("notifications", true))
     var isDarkMode by mutableStateOf(prefs.getBoolean("dark_mode", false))
-    var currencySymbol by mutableStateOf(prefs.getString("currency","£")?:"£")
+    var currencySymbol by mutableStateOf(prefs.getString("currency", "£") ?: "£")
 
-    init {
-        val db = ExpenseDataBase.getDatabase(application)
-        repository = ExpenseRepository(db.expenseDao(), db.goalDao())
-        allExpenses = repository.allExpenses
-        totalAmount = repository.totalAmount
-        categoryTotals = repository.categoryTotals
-        allGoals = repository.allGoals
-    }
-
-    //preference functions
-    fun toggleNotification(enabled: Boolean) {
+    //preferences functions
+    fun toggleNotifications(enabled: Boolean) {
         isNotificationsEnabled = enabled
         prefs.edit().putBoolean("notifications", enabled).apply()
     }
@@ -59,6 +48,15 @@ class ExpenseViewModel(application: Application) : AndroidViewModel(application)
     fun updateCurrency(symbol: String) {
         currencySymbol = symbol
         prefs.edit().putString("currency", symbol).apply()
+    }
+
+    init {
+        val db = ExpenseDataBase.getDatabase(application)
+        repository = ExpenseRepository(db.expenseDao(), db.goalDao())
+        allExpenses = repository.allExpenses
+        totalAmount = repository.totalAmount
+        categoryTotals = repository.categoryTotals
+        allGoals = repository.allGoals
     }
 
     //Expense Functions
@@ -78,7 +76,7 @@ class ExpenseViewModel(application: Application) : AndroidViewModel(application)
         repository.updateGoal(goal)
     }
 
-    //Adds automatic expense to db
+    // will add subscriptions to db
     fun logAutomaticExpense(title: String, amount: Double, category: String) = viewModelScope.launch(Dispatchers.IO) {
         val currentDate = SimpleDateFormat("dd MM yyyy", Locale.getDefault()).format(Date())
         val automaticExpense = ExpenseModel(
