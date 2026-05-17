@@ -44,6 +44,9 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        val prefs = getSharedPreferences("app_prefs", android.content.Context.MODE_PRIVATE)
+        val notificationsEnabled = prefs.getBoolean("notifications", true)
+
         //creates the channel
         com.example.moneymatters.util.NotificationHelper.createNotificationChannel(this)
 
@@ -52,11 +55,20 @@ class MainActivity : ComponentActivity() {
             24, TimeUnit.HOURS
         ).build()
 
-        androidx.work.WorkManager.getInstance(this).enqueueUniquePeriodicWork(
-            "DailyReminder",
-            ExistingPeriodicWorkPolicy.KEEP,
-            dailyWorkRequest
-        )
+        // Check our saved settings before launching the background task
+
+        if (notificationsEnabled) {
+            val dailyWorkRequest = PeriodicWorkRequestBuilder<DailyReminderWorker>(
+                24, TimeUnit.HOURS
+            ).build()
+            androidx.work.WorkManager.getInstance(this).enqueueUniquePeriodicWork(
+                "DailyReminder",
+                ExistingPeriodicWorkPolicy.KEEP,
+                dailyWorkRequest
+            )
+        } else {
+            androidx.work.WorkManager.getInstance(this).cancelUniqueWork("DailyReminder")
+        }
 
         setContent {
             val context = LocalContext.current

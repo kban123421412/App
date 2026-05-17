@@ -31,9 +31,10 @@ class ExpenseViewModel(application: Application) : AndroidViewModel(application)
     val allGoals: LiveData<List<GoalModel>>
 
     //State trackers for the settings panel
-    var isNotificationsEnabled by mutableStateOf(true)
-    var isDarkMode by mutableStateOf(false)
-    var currencySymbol by mutableStateOf("£")
+    private val prefs = application.getSharedPreferences("app_prefs", android.content.Context.MODE_PRIVATE)
+    var isNotificationsEnabled by mutableStateOf(prefs.getBoolean("notifications", true))
+    var isDarkMode by mutableStateOf(prefs.getBoolean("dark_mode", false))
+    var currencySymbol by mutableStateOf(prefs.getString("currency","£")?:"£")
 
     init {
         val db = ExpenseDataBase.getDatabase(application)
@@ -42,6 +43,22 @@ class ExpenseViewModel(application: Application) : AndroidViewModel(application)
         totalAmount = repository.totalAmount
         categoryTotals = repository.categoryTotals
         allGoals = repository.allGoals
+    }
+
+    //preference functions
+    fun toggleNotification(enabled: Boolean) {
+        isNotificationsEnabled = enabled
+        prefs.edit().putBoolean("notifications", enabled).apply()
+    }
+
+    fun toggleDarkMode(enabled: Boolean) {
+        isDarkMode = enabled
+        prefs.edit().putBoolean("dark_mode", enabled).apply()
+    }
+
+    fun updateCurrency(symbol: String) {
+        currencySymbol = symbol
+        prefs.edit().putString("currency", symbol).apply()
     }
 
     //Expense Functions

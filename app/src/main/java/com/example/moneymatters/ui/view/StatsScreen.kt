@@ -257,7 +257,10 @@ fun StatsScreen(viewModel: ExpenseViewModel) {
 
                 //checks if goal is completed
                 if(updatedGoal.currentAmount >= updatedGoal.targetAmount && goal.currentAmount < goal.targetAmount){
-                    showGoalCompletedNotification(context, updatedGoal.title)
+                    // NEW: Check if notifications are enabled before showing the popup!
+                    if (viewModel.isNotificationsEnabled) {
+                        showGoalCompletedNotification(context, updatedGoal.title)
+                    }
                 }
                 selectedGoalForFunds = null
             }

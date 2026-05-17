@@ -15,7 +15,11 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.work.ExistingPeriodicWorkPolicy
+import androidx.work.PeriodicWorkRequestBuilder
 import com.example.moneymatters.ui.viewModel.ExpenseViewModel
+import com.example.moneymatters.util.DailyReminderWorker
+import java.util.concurrent.TimeUnit
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -50,13 +54,31 @@ fun SettingsScreen(viewModel: ExpenseViewModel) {
                     }
                     Switch(
                         checked = viewModel.isNotificationsEnabled,
-                        onCheckedChange = { viewModel.isNotificationsEnabled = it }
+                        onCheckedChange = { isEnabled ->
+
+                            //saves setting permanently
+                            viewModel.toggleNotifications(isEnabled)
+
+                            val workManager = androidx.work.WorkManager.getInstance(context)
+                            if (isEnabled) {
+                                val dailyWorkRequest = PeriodicWorkRequestBuilder<DailyReminderWorker>(
+                                    24, TimeUnit.HOURS
+                                ).build()
+                                workManager.enqueueUniquePeriodicWork(
+                                    "DailyReminder",
+                                    ExistingPeriodicWorkPolicy.KEEP,
+                                    dailyWorkRequest
+                                )
+                            } else {
+                                workManager.cancelUniqueWork("DailyReminder")
+                            }
+                        }
                     )
                 }
 
                 HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp))
 
-                //dark theme row
+                // Dark Theme Row
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
@@ -69,13 +91,14 @@ fun SettingsScreen(viewModel: ExpenseViewModel) {
                     }
                     Switch(
                         checked = viewModel.isDarkMode,
-                        onCheckedChange = { viewModel.isDarkMode = it }
+                        // NEW: Save the setting permanently
+                        onCheckedChange = { viewModel.toggleDarkMode(it) }
                     )
                 }
 
                 HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp))
 
-                //currency swap row
+                //currency Swap Row
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
@@ -86,17 +109,19 @@ fun SettingsScreen(viewModel: ExpenseViewModel) {
                         Spacer(modifier = Modifier.width(12.dp))
                         Text(text = "Active Currency Symbol")
                     }
+
                     Box {
                         Button(onClick = { showCurrencyMenu = true }) {
                             Text(text = viewModel.currencySymbol)
                             Icon(imageVector = Icons.Filled.ArrowDropDown, contentDescription = "Open")
                         }
+
                         DropdownMenu(expanded = showCurrencyMenu, onDismissRequest = { showCurrencyMenu = false }) {
 
-                            //remeber to add more cunrrencies
-                            DropdownMenuItem(text = { Text("Pound (£)") }, onClick = { viewModel.currencySymbol = "£"; showCurrencyMenu = false })
-                            DropdownMenuItem(text = { Text("Dollar ($)") }, onClick = { viewModel.currencySymbol = "$"; showCurrencyMenu = false })
-                            DropdownMenuItem(text = { Text("Euro (€)") }, onClick = { viewModel.currencySymbol = "€"; showCurrencyMenu = false })
+                            //save the settings
+                            DropdownMenuItem(text = { Text("Pound (£)") }, onClick = { viewModel.updateCurrency("£"); showCurrencyMenu = false })
+                            DropdownMenuItem(text = { Text("Dollar ($)") }, onClick = { viewModel.updateCurrency("$"); showCurrencyMenu = false })
+                            DropdownMenuItem(text = { Text("Euro (€)") }, onClick = { viewModel.updateCurrency("€"); showCurrencyMenu = false })
                         }
                     }
                 }
