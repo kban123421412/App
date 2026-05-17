@@ -144,8 +144,7 @@ fun SettingsScreen(viewModel: ExpenseViewModel) {
                     Icon(imageVector = Icons.Filled.Calculate, contentDescription = "Calculator Intent")
                     Spacer(modifier = Modifier.width(12.dp))
                     Column {
-                        Text(text = "Launch System Calculator", fontWeight = FontWeight.SemiBold)
-                        Text(text = "Uses Implicit System Intents to leave app", fontSize = 12.sp, color = MaterialTheme.colorScheme.outline)
+                        Text(text = "Launch Calculator", fontWeight = FontWeight.SemiBold)
                     }
                 }
             }
