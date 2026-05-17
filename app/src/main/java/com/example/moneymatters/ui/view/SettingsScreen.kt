@@ -1,6 +1,8 @@
 package com.example.moneymatters.ui.view
 
 import android.content.Intent
+import android.widget.Toast
+import android.widget.Toast.makeText
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -152,16 +154,39 @@ fun SettingsScreen(viewModel: ExpenseViewModel) {
 
                 HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp))
 
-                // EXTERNAL IMPLICIT INTENT HOOK: Hands control over to system utilities to fulfill calculator launch demands
+                //goes to calc app (calc is slang for calculator)
                 Row(
                     modifier = Modifier.fillMaxWidth().clickable {
-                        val launchIntent = Intent(Intent.ACTION_MAIN).apply {
-                            addCategory(Intent.CATEGORY_APP_CALCULATOR)
-                            flags = Intent.FLAG_ACTIVITY_NEW_TASK
-                        }
-                        //checks for valid software handler
-                        if (launchIntent.resolveActivity(context.packageManager) != null) {
+                        try {
+
+                            //1.tries to open calculator app
+                            val launchIntent = Intent.makeMainSelectorActivity(
+                                Intent.ACTION_MAIN,
+                                Intent.CATEGORY_APP_CALCULATOR
+                            ).apply {
+                                flags = Intent.FLAG_ACTIVITY_NEW_TASK
+                            }
                             context.startActivity(launchIntent)
+
+                        } catch (e: Exception) {
+                            try {
+
+                                //2.if 1 doesnt work target samsung calculator (all testing done on samsung phone)
+                                val samsungIntent = context.packageManager.getLaunchIntentForPackage("com.sec.android.app.popupcalculator")
+                                if (samsungIntent != null) {
+                                    context.startActivity(samsungIntent)
+                                } else {
+
+                                    //3.if 2 doesnt work opens google calculator
+                                    val webIntent = Intent(
+                                        Intent.ACTION_VIEW,
+                                        android.net.Uri.parse("https://www.google.com/search?q=calculator")
+                                    )
+                                    context.startActivity(webIntent)
+                                }
+                            } catch (e2: Exception) {
+                                android.widget.Toast.makeText(context, "Could not open a calculator.", android.widget.Toast.LENGTH_SHORT).show()
+                            }
                         }
                     }.padding(vertical = 8.dp),
                     verticalAlignment = Alignment.CenterVertically
@@ -169,7 +194,8 @@ fun SettingsScreen(viewModel: ExpenseViewModel) {
                     Icon(imageVector = Icons.Filled.Calculate, contentDescription = "Calculator Intent")
                     Spacer(modifier = Modifier.width(12.dp))
                     Column {
-                        Text(text = "Launch Calculator", fontWeight = FontWeight.SemiBold)
+                        Text(text = "Launch System Calculator", fontWeight = FontWeight.SemiBold)
+                        Text(text = "Uses Implicit System Intents to leave app", fontSize = 12.sp, color = MaterialTheme.colorScheme.outline)
                     }
                 }
             }
