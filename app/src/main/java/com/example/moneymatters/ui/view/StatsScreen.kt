@@ -297,6 +297,7 @@ fun SmallExpenseItem(expense: ExpenseModel, currencySymbol: String) {
         }
 
         Text(text = String.format("${currencySymbol}%.2f", expense.amount), fontWeight = FontWeight.Bold, fontSize = 16.sp)
+    }
 }
 
 @Composable
@@ -391,4 +392,3 @@ fun AddFundsDialog(goal: GoalModel, onDismiss: () -> Unit, onSave: (Double) -> U
         dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } }
     )
   }
-}
