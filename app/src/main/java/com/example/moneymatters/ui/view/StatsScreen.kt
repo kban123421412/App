@@ -20,6 +20,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.ui.res.stringResource
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.moneymatters.R
 import com.example.moneymatters.data.model.GoalModel
 import com.example.moneymatters.data.model.ExpenseModel
@@ -29,6 +30,7 @@ import com.github.mikephil.charting.data.PieData
 import com.github.mikephil.charting.data.PieDataSet
 import com.github.mikephil.charting.data.PieEntry
 import com.example.moneymatters.util.NotificationHelper.showGoalCompletedNotification
+import com.example.moneymatters.util.ReceiptExporter.shareReceipt
 
 // Tracks which time filter chip is currently selected
 enum class TimeFilter { ALL, WEEK, MONTH, YEAR }
@@ -49,7 +51,7 @@ fun StatsScreen(viewModel: ExpenseViewModel) {
     var selectedGoalForFunds by remember { mutableStateOf<GoalModel?>(null) }
     var selectedFilter by remember { mutableStateOf(TimeFilter.ALL) }
 
-    // DYNAMIC FILTERING: Calculates the dates and filters the list automatically
+    //calculates the dates and filters the list automatically
     val filteredExpenses by remember(allExpenses, selectedFilter) {
         derivedStateOf {
             val format = SimpleDateFormat("dd MM yyyy", Locale.getDefault())
@@ -73,7 +75,7 @@ fun StatsScreen(viewModel: ExpenseViewModel) {
         }
     }
 
-    // Groups the dynamic filtered data for presentation on the pie chart slices
+    //groups the filtered data on donut chart segments
     val pieEntries by remember(filteredExpenses) {
         derivedStateOf {
             filteredExpenses.groupBy { it.category }
@@ -81,7 +83,7 @@ fun StatsScreen(viewModel: ExpenseViewModel) {
         }
     }
 
-    //Scaffold for screen structure and buttons
+    //scaffold for screen structure and buttons
     Scaffold(
         floatingActionButton = {
             FloatingActionButton(onClick = { showAddGoalDialog = true }) { //opens add goal dialog
@@ -89,7 +91,8 @@ fun StatsScreen(viewModel: ExpenseViewModel) {
             }
         }
     ) { paddingValues ->
-        // Unified LazyColumn so your whole screen handles scrolling perfectly together
+
+        //lazy column for the list of expenses
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
@@ -121,7 +124,7 @@ fun StatsScreen(viewModel: ExpenseViewModel) {
                     FilterChip(selected = selectedFilter == TimeFilter.YEAR, onClick = { selectedFilter = TimeFilter.YEAR }, label = { Text("Year") })
                 }
 
-                // 3rd party chart -> donut chart but within jetpack compose
+                //3rd party chart -> donut chart but within jetpack compose
                 AndroidView(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -157,6 +160,7 @@ fun StatsScreen(viewModel: ExpenseViewModel) {
                             chart.notifyDataSetChanged()
                             chart.invalidate() //refreshes chart
                         } else {
+
                             //if db is empty clear chart
                             chart.clear()
                             chart.invalidate()
@@ -165,15 +169,37 @@ fun StatsScreen(viewModel: ExpenseViewModel) {
                 )
             }
 
-            // Sub-Section: Interactive list of items based on filter selection
+            //listof expenses based on filter
             if (filteredExpenses.isNotEmpty()) {
                 item {
-                    Text(
-                        text = "Filtered Expenses",
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight.Bold,
-                        modifier = Modifier.padding(top = 8.dp, bottom = 8.dp)
-                    )
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "Filtered Expenses",
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.padding(top = 8.dp, bottom = 8.dp)
+                        )
+
+                        IconButton(
+                            onClick = {
+                                shareReceipt(
+                                    context = context,
+                                    filterName = selectedFilter.name.lowercase().replaceFirstChar { it.uppercase() },
+                                    expenses = filteredExpenses
+                                )
+                            }
+                        ) {
+                            Icon(
+                                imageVector = Icons.Filled.Share,
+                                contentDescription = "Share Receipt Image",
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                    }
                 }
                 items(filteredExpenses) { expense ->
                     SmallExpenseItem(expense = expense)
@@ -194,16 +220,13 @@ fun StatsScreen(viewModel: ExpenseViewModel) {
                 )
             }
 
-            // LazyColumn for Goals
-            //added .weight() to the lazy colum so
-            //it takes the left over space correctly
             items(goals) { goal ->
                 GoalItemCard(goal = goal, onClick = { selectedGoalForFunds = goal })
             }
 
             item {
-                Spacer(modifier = Modifier.height(80.dp))
-            }
+                Spacer(modifier = Modifier.height(80.dp)) //removed .weight() from lazy colum so
+            }                                                     //it takes the left over space correctly
         }
     }
 
@@ -238,7 +261,7 @@ fun StatsScreen(viewModel: ExpenseViewModel) {
     }
 }
 
-// Custom layout representation for items filtered down below the pie display
+//custom layout for filtered expenses below donut chart
 @Composable
 fun SmallExpenseItem(expense: ExpenseModel) {
     val icon = when (expense.category) {
@@ -269,7 +292,7 @@ fun SmallExpenseItem(expense: ExpenseModel) {
             Text(text = expense.date, fontSize = 12.sp, color = Color.Gray)
         }
 
-        Text(text = String.format("£%.2f", expense.amount), fontWeight = FontWeight.Bold, fontSize = 16.sp)
+        Text(text = String.format("${viewModel.currencySymbol}%.2f", expense.amount), fontWeight = FontWeight.Bold, fontSize = 16.sp)
     }
 }
 
