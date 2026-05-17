@@ -21,7 +21,7 @@ import java.util.*
 import kotlin.math.exp
 
 @Composable
-fun ExpenseListScreen(viewModel: ExpenseViewModel) {
+fun ExpenseListScreen(viewModel: ExpenseViewModel, currencySymbol: String) {
 
     //observes the room db
     val expense by viewModel.allExpenses.observeAsState(emptyList())
@@ -47,7 +47,7 @@ fun ExpenseListScreen(viewModel: ExpenseViewModel) {
         ) {
             //Displays total expense
             Text(
-                text = String.format("Total: £%.2f", safeTotalAmount), //changed from totalAmount to safeTotalAmount
+                text = String.format("Total: ${currencySymbol}%.2f", safeTotalAmount), //changed from totalAmount to safeTotalAmount
                 fontSize = 24.sp,
                 fontWeight = FontWeight.Bold,
                 modifier = Modifier.padding(bottom = 16.dp)
@@ -60,7 +60,11 @@ fun ExpenseListScreen(viewModel: ExpenseViewModel) {
 
                 //Creates the cards for each expense
                 items(expense) {expense ->
-                    ExpenseItemCard(expense = expense, onDelete = { viewModel.deleteExpense(it)} )
+                    ExpenseItemCard(
+                        expense = expense,
+                        onDelete = { viewModel.deleteExpense(it) },
+                        currencySymbol = currencySymbol
+                    )
                 }
             }
         }
@@ -82,7 +86,7 @@ fun ExpenseListScreen(viewModel: ExpenseViewModel) {
     }
 
 @Composable
-fun ExpenseItemCard(expense: ExpenseModel, onDelete: (ExpenseModel) -> Unit) {
+fun ExpenseItemCard(expense: ExpenseModel, onDelete: (ExpenseModel) -> Unit , currencySymbol: String) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -104,7 +108,7 @@ fun ExpenseItemCard(expense: ExpenseModel, onDelete: (ExpenseModel) -> Unit) {
             }
 
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(text = String.format("£%.2f", expense.amount), fontWeight = FontWeight.Bold, fontSize = 18.sp)
+                Text(text = String.format("${currencySymbol}%.2f", expense.amount), fontWeight = FontWeight.Bold, fontSize = 18.sp)
                 IconButton(onClick = { onDelete(expense) }) {
                     Icon(Icons.Filled.Delete, contentDescription = "Delete", tint = MaterialTheme.colorScheme.error)
                 }
