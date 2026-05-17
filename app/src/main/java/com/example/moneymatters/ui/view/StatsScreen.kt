@@ -202,7 +202,7 @@ fun StatsScreen(viewModel: ExpenseViewModel) {
                     }
                 }
                 items(filteredExpenses) { expense ->
-                    SmallExpenseItem(expense = expense)
+                    SmallExpenseItem(expense = expense, currencySymbol = viewModel.currencySymbol)
                 }
             }
 
@@ -221,7 +221,11 @@ fun StatsScreen(viewModel: ExpenseViewModel) {
             }
 
             items(goals) { goal ->
-                GoalItemCard(goal = goal, onClick = { selectedGoalForFunds = goal })
+                GoalItemCard(
+                    goal = goal,
+                    onClick = { selectedGoalForFunds = goal },
+                    currencySymbol = viewModel.currencySymbol
+                )
             }
 
             item {
@@ -263,7 +267,7 @@ fun StatsScreen(viewModel: ExpenseViewModel) {
 
 //custom layout for filtered expenses below donut chart
 @Composable
-fun SmallExpenseItem(expense: ExpenseModel) {
+fun SmallExpenseItem(expense: ExpenseModel, currencySymbol: String) {
     val icon = when (expense.category) {
         "Food" -> Icons.Filled.Fastfood
         "Transport" -> Icons.Filled.DirectionsCar
@@ -292,12 +296,11 @@ fun SmallExpenseItem(expense: ExpenseModel) {
             Text(text = expense.date, fontSize = 12.sp, color = Color.Gray)
         }
 
-        Text(text = String.format("${viewModel.currencySymbol}%.2f", expense.amount), fontWeight = FontWeight.Bold, fontSize = 16.sp)
-    }
+        Text(text = String.format("${currencySymbol}%.2f", expense.amount), fontWeight = FontWeight.Bold, fontSize = 16.sp)
 }
 
 @Composable
-fun GoalItemCard(goal: GoalModel, onClick: () -> Unit) {
+fun GoalItemCard(goal: GoalModel, onClick: () -> Unit, currencySymbol: String) {
 
     //card that displays goal information
     Card(
@@ -325,7 +328,7 @@ fun GoalItemCard(goal: GoalModel, onClick: () -> Unit) {
                 modifier = Modifier.fillMaxWidth()
             )
             Text(
-                text = String.format("£%.2f / £%.2f", goal.currentAmount, goal.targetAmount),
+                text = String.format("${currencySymbol}%.2f / ${currencySymbol}%.2f", goal.currentAmount, goal.targetAmount),
                 modifier = Modifier.fillMaxWidth(),
                 textAlign = androidx.compose.ui.text.style.TextAlign.End
             )
@@ -372,7 +375,10 @@ fun AddFundsDialog(goal: GoalModel, onDismiss: () -> Unit, onSave: (Double) -> U
         onDismissRequest = onDismiss,
         title = { Text("Add Funds to ${goal.title}") },
         text = {
-            OutlinedTextField(value = amount, onValueChange = { amount = it }, label = { Text("Amount to Add (£)") })
+            OutlinedTextField(
+                value = amount,
+                onValueChange = { amount = it },
+                label = { Text("Amount to Add (£)") })
         },
         confirmButton = {
             Button(onClick = {
@@ -384,4 +390,5 @@ fun AddFundsDialog(goal: GoalModel, onDismiss: () -> Unit, onSave: (Double) -> U
         },
         dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } }
     )
+  }
 }
