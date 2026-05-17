@@ -106,7 +106,10 @@ fun MainScreenApp(expenseViewModel: ExpenseViewModel) {
 
             //screens
             composable("expense_list") {
-                ExpenseListScreen(viewModel = expenseViewModel)
+                ExpenseListScreen(
+                    viewModel = expenseViewModel,
+                    expenseViewModel.currencySymbol
+                )
             }
             composable("stats_screen") {
                 StatsScreen(viewModel = expenseViewModel)
