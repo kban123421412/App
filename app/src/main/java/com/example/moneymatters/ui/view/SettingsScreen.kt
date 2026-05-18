@@ -3,7 +3,9 @@ package com.example.moneymatters.ui.view
 import android.content.Intent
 import android.widget.Toast
 import android.widget.Toast.makeText
+import androidx.compose.foundation.ExperimentalFoundationApi //for the holding functionality
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable //also for holding functionality
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -13,6 +15,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -23,11 +26,12 @@ import com.example.moneymatters.ui.viewModel.ExpenseViewModel
 import com.example.moneymatters.util.DailyReminderWorker
 import java.util.concurrent.TimeUnit
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
 fun SettingsScreen(viewModel: ExpenseViewModel) {
     val context = LocalContext.current
     var showCurrencyMenu by remember { mutableStateOf(false) }
+    var showAddTemplateDialog by remember { mutableStateOf(false) }
 
     Column(
         modifier = Modifier
@@ -80,7 +84,7 @@ fun SettingsScreen(viewModel: ExpenseViewModel) {
 
                 HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp))
 
-                // Dark Theme Row
+                //dark Theme Row
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
@@ -93,7 +97,8 @@ fun SettingsScreen(viewModel: ExpenseViewModel) {
                     }
                     Switch(
                         checked = viewModel.isDarkMode,
-                        // NEW: Save the setting permanently
+
+                        //permanently saves the preference
                         onCheckedChange = { viewModel.toggleDarkMode(it) }
                     )
                 }
@@ -137,18 +142,52 @@ fun SettingsScreen(viewModel: ExpenseViewModel) {
         Card(modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)) {
             Column(modifier = Modifier.padding(16.dp)) {
 
-                //Adds a mock monthly Netflix charge straight into Room Database on tap
+                //recurring logging template
                 Row(
-                    modifier = Modifier.fillMaxWidth().clickable {
-                        viewModel.logAutomaticExpense("Netflix Subscription", 10.99, "Entertainment")
-                    }.padding(vertical = 8.dp),
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Icon(imageVector = Icons.Filled.Autorenew, contentDescription = "Auto Log")
-                    Spacer(modifier = Modifier.width(12.dp))
                     Column {
-                        Text(text = "Log Recurring Netflix Charge", fontWeight = FontWeight.SemiBold)
-                        Text(text = "Instantly inputs monthly £10.99 payment", fontSize = 12.sp, color = MaterialTheme.colorScheme.outline)
+                        Text(text = "Recurring Expenses", fontWeight = FontWeight.SemiBold)
+                        Text(text = "Tap to log instantly. Hold to delete.", fontSize = 12.sp, color = MaterialTheme.colorScheme.outline)
+                    }
+                    IconButton(onClick = { showAddTemplateDialog = true }) {
+                        Icon(imageVector = Icons.Filled.AddCircle, contentDescription = "Add Template", tint = MaterialTheme.colorScheme.primary)
+                    }
+                }
+
+                if (viewModel.recurringTemplates.isEmpty()) {
+                    Text("No recurring templates saved.", modifier = Modifier.padding(vertical = 8.dp), color = Color.Gray, fontSize = 14.sp)
+                } else {
+                    viewModel.recurringTemplates.forEach { template ->
+                        HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+
+                                //detects normal taps and holding taps
+                                .combinedClickable(
+                                    onClick = {
+                                        viewModel.logAutomaticExpense(template.title, template.amount, template.category)
+                                        Toast.makeText(context, "Logged: ${template.title}", Toast.LENGTH_SHORT).show()
+                                    },
+                                    onLongClick = {
+                                        viewModel.deleteRecurringExpense(template)
+                                        Toast.makeText(context, "Deleted: ${template.title}", Toast.LENGTH_SHORT).show()
+                                    }
+                                )
+                                .padding(vertical = 8.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(imageVector = Icons.Filled.Autorenew, contentDescription = "Auto Log", tint = MaterialTheme.colorScheme.secondary)
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(text = template.title, fontWeight = FontWeight.SemiBold)
+                                Text(text = template.category, fontSize = 12.sp, color = MaterialTheme.colorScheme.outline)
+                            }
+                            Text(text = String.format("${viewModel.currencySymbol}%.2f", template.amount), fontWeight = FontWeight.Bold)
+                        }
                     }
                 }
 
@@ -201,4 +240,71 @@ fun SettingsScreen(viewModel: ExpenseViewModel) {
             }
         }
     }
+
+    //reccurring log popup
+    if (showAddTemplateDialog) {
+        AddTemplateDialog(
+            currencySymbol = viewModel.currencySymbol,
+            onDismiss = { showAddTemplateDialog = false },
+            onSave = { title, amount, category ->
+
+                viewModel.addRecurringExpense(title, amount, category)
+                showAddTemplateDialog = false
+            }
+        )
+    }
+}
+
+//creates the template
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun AddTemplateDialog(currencySymbol: String, onDismiss: () -> Unit, onSave: (String, Double, String) -> Unit) {
+    var title by remember { mutableStateOf("") }
+    var amount by remember { mutableStateOf("") }
+    var category by remember { mutableStateOf("Food") }
+    var customCategory by remember { mutableStateOf("") }
+    var expanded by remember { mutableStateOf(false) }
+    val categories = listOf("Food", "Transport", "Entertainment", "Rent", "Shopping", "Other")
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("New Recurring Template") },
+        text = {
+            Column {
+                OutlinedTextField(value = title, onValueChange = { title = it }, label = { Text("Title (e.g. Netflix)") })
+                Spacer(modifier = Modifier.height(8.dp))
+                OutlinedTextField(value = amount, onValueChange = { amount = it }, label = { Text("Amount ($currencySymbol)") })
+                Spacer(modifier = Modifier.height(8.dp))
+
+                ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = { expanded = !expanded }) {
+                    OutlinedTextField(
+                        value = category,
+                        onValueChange = {},
+                        readOnly = true,
+                        label = { Text("Category") },
+                        modifier = Modifier.menuAnchor()
+                    )
+                    ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+                        categories.forEach { selection ->
+                            DropdownMenuItem(text = { Text(selection) }, onClick = { category = selection; expanded = false })
+                        }
+                    }
+                }
+                if (category == "Other") {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    OutlinedTextField(value = customCategory, onValueChange = { customCategory = it }, label = { Text("Custom Category") })
+                }
+            }
+        },
+        confirmButton = {
+            Button(onClick = {
+                val parsedAmount = amount.toDoubleOrNull()
+                val finalCategory = if (category == "Other") customCategory else category
+                if (title.isNotBlank() && parsedAmount != null) {
+                    onSave(title, parsedAmount, finalCategory)
+                }
+            }) { Text("Save") }
+        },
+        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } }
+    )
 }
