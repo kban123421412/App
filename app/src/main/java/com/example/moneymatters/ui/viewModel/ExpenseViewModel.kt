@@ -62,7 +62,7 @@ class ExpenseViewModel(application: Application) : AndroidViewModel(application)
         }
     }
 
-    fun addRecurringExpenses(title: String, amount: Double, category: String) {
+    fun addRecurringExpense(title: String, amount: Double, category: String) {
         val newTemplate = RecurringTemplate(UUID.randomUUID().toString(), title, amount, category)
         val updatedList = recurringTemplates + newTemplate
         recurringTemplates = updatedList
