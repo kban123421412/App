@@ -126,7 +126,7 @@ fun ExpenseItemCard(expense: ExpenseModel, onDelete: (ExpenseModel) -> Unit , cu
 //popup for adding new expense
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AddExpenseDialog(onDismiss: () -> Unit, onSave: (ExpenseModel) -> Unit) {
+fun AddExpenseDialog(onDismiss: () -> Unit, onSave: (ExpenseModel) -> Unit, currencySymbol: String) {
 
     //stores input
     var title by remember { mutableStateOf("") }

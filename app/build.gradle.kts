@@ -63,4 +63,9 @@ dependencies {
 
     // WorkManager (Notifications)
     implementation("androidx.work:work-runtime-ktx:2.9.0")
+
+    // Testing libraries for content provider
+    testImplementation(libs.junit)
+    androidTestImplementation(libs.androidx.junit)
+    androidTestImplementation(libs.androidx.espresso.core)
 }

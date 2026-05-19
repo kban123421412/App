@@ -192,7 +192,8 @@ fun StatsScreen(viewModel: ExpenseViewModel) {
                                 shareReceipt(
                                     context = context,
                                     filterName = selectedFilter.name.lowercase().replaceFirstChar { it.uppercase() },
-                                    expenses = filteredExpenses
+                                    expenses = filteredExpenses,
+                                    currencySymbol = viewModel.currencySymbol
                                 )
                             }
                         ) {
@@ -240,6 +241,7 @@ fun StatsScreen(viewModel: ExpenseViewModel) {
     //displays add goal dialog
     if (showAddGoalDialog) {
         AddGoalDialog(
+            currencySymbol = viewModel.currencySymbol,
             onDismiss = { showAddGoalDialog = false },
             onSave = { goal ->
                 viewModel.insertGoal(goal)
@@ -251,6 +253,7 @@ fun StatsScreen(viewModel: ExpenseViewModel) {
     //displays add funds dialog for specific goal
     selectedGoalForFunds?.let { goal ->
         AddFundsDialog(
+            currencySymbol = viewModel.currencySymbol,
             goal = goal,
             onDismiss = { selectedGoalForFunds = null },
             onSave = { amountToAdd ->
