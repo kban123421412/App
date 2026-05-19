@@ -2,7 +2,7 @@ package com.example.moneymatters.ui.view
 
 import android.content.Intent
 import android.widget.Toast
-import android.widget.Toast.makeText
+import android.widget.Toast.*
 import androidx.compose.foundation.ExperimentalFoundationApi //for the holding functionality
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable //also for holding functionality
@@ -33,18 +33,19 @@ fun SettingsScreen(viewModel: ExpenseViewModel) {
     var showCurrencyMenu by remember { mutableStateOf(false) }
     var showAddTemplateDialog by remember { mutableStateOf(false) }
 
+    //stacks all UI vertically
     Column(
         modifier = Modifier
             .fillMaxSize()
             .padding(16.dp)
-            .verticalScroll(rememberScrollState()) //accessibility on smaller screens
+            .verticalScroll(rememberScrollState()) //accessibility on smaller screens, prevents cutoff
     ) {
         Text(text = "Settings", fontSize = 28.sp, fontWeight = FontWeight.Bold)
         Spacer(modifier = Modifier.height(24.dp))
 
         //Sytem Controls Section
         Text(text = "Preferences", fontSize = 16.sp, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.SemiBold)
-        Card(modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)) {
+        Card(modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)) { //puts all preferences into 1 card
             Column(modifier = Modifier.padding(16.dp)) {
 
                 //Notifications Row
@@ -62,11 +63,14 @@ fun SettingsScreen(viewModel: ExpenseViewModel) {
                         checked = viewModel.isNotificationsEnabled,
                         onCheckedChange = { isEnabled ->
 
-                            //saves setting permanently
+                            //permanently saves notification preference
                             viewModel.toggleNotifications(isEnabled)
 
+                            //workmanager for daily notifications even if app is closed
                             val workManager = androidx.work.WorkManager.getInstance(context)
                             if (isEnabled) {
+
+                                //daily log reminder
                                 val dailyWorkRequest = PeriodicWorkRequestBuilder<DailyReminderWorker>(
                                     24, TimeUnit.HOURS
                                 ).build()
@@ -98,7 +102,7 @@ fun SettingsScreen(viewModel: ExpenseViewModel) {
                     Switch(
                         checked = viewModel.isDarkMode,
 
-                        //permanently saves the preference
+                        //permanently saves the dark mode preference
                         onCheckedChange = { viewModel.toggleDarkMode(it) }
                     )
                 }
@@ -117,6 +121,7 @@ fun SettingsScreen(viewModel: ExpenseViewModel) {
                         Text(text = "Active Currency Symbol")
                     }
 
+                    //currency dropdown
                     Box {
                         Button(onClick = { showCurrencyMenu = true }) {
                             Text(text = viewModel.currencySymbol)
@@ -125,7 +130,7 @@ fun SettingsScreen(viewModel: ExpenseViewModel) {
 
                         DropdownMenu(expanded = showCurrencyMenu, onDismissRequest = { showCurrencyMenu = false }) {
 
-                            //save the settings
+                            //save the currency preference (add more maybe)
                             DropdownMenuItem(text = { Text("Pound (£)") }, onClick = { viewModel.updateCurrency("£"); showCurrencyMenu = false })
                             DropdownMenuItem(text = { Text("Dollar ($)") }, onClick = { viewModel.updateCurrency("$"); showCurrencyMenu = false })
                             DropdownMenuItem(text = { Text("Euro (€)") }, onClick = { viewModel.updateCurrency("€"); showCurrencyMenu = false })
@@ -142,7 +147,7 @@ fun SettingsScreen(viewModel: ExpenseViewModel) {
         Card(modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)) {
             Column(modifier = Modifier.padding(16.dp)) {
 
-                //recurring logging template
+                //recurring logging
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
@@ -153,28 +158,37 @@ fun SettingsScreen(viewModel: ExpenseViewModel) {
                         Text(text = "Tap to log instantly. Hold to delete.", fontSize = 12.sp, color = MaterialTheme.colorScheme.outline)
                     }
                     IconButton(onClick = { showAddTemplateDialog = true }) {
-                        Icon(imageVector = Icons.Filled.AddCircle, contentDescription = "Add Template", tint = MaterialTheme.colorScheme.primary)
+                        Icon(imageVector = Icons.Filled.AddCircle, contentDescription = "Add Expense", tint = MaterialTheme.colorScheme.primary)
                     }
                 }
 
+                //checks if there are any reccuring logs and displays them
                 if (viewModel.recurringTemplates.isEmpty()) {
-                    Text("No recurring templates saved.", modifier = Modifier.padding(vertical = 8.dp), color = Color.Gray, fontSize = 14.sp)
+                    Text("No recurring expenses saved.", modifier = Modifier.padding(vertical = 8.dp), color = Color.Gray, fontSize = 14.sp)
                 } else {
+
+                    //loops through the reccurring logs
                     viewModel.recurringTemplates.forEach { template ->
                         HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
 
-                                //detects normal taps and holding taps
+                                //detects normal taps and holding taps using Expermimental Foundation Api
                                 .combinedClickable(
                                     onClick = {
+
+                                        //pushed to db
                                         viewModel.logAutomaticExpense(template.title, template.amount, template.category)
-                                        Toast.makeText(context, "Logged: ${template.title}", Toast.LENGTH_SHORT).show()
+                                        makeText(context, "Logged: ${template.title}", LENGTH_SHORT).show()
                                     },
                                     onLongClick = {
+
+                                        //removes it
                                         viewModel.deleteRecurringExpense(template)
-                                        Toast.makeText(context, "Deleted: ${template.title}", Toast.LENGTH_SHORT).show()
+                                        makeText(context, "Deleted: ${template.title}",
+                                            LENGTH_SHORT
+                                        ).show()
                                     }
                                 )
                                 .padding(vertical = 8.dp),
@@ -224,7 +238,9 @@ fun SettingsScreen(viewModel: ExpenseViewModel) {
                                     context.startActivity(webIntent)
                                 }
                             } catch (e2: Exception) {
-                                android.widget.Toast.makeText(context, "Could not open a calculator.", android.widget.Toast.LENGTH_SHORT).show()
+
+                                //if 1, 2 and 3 fail displays error
+                                makeText(context, "Could not open a calculator.", LENGTH_SHORT).show()
                             }
                         }
                     }.padding(vertical = 8.dp),
@@ -233,8 +249,7 @@ fun SettingsScreen(viewModel: ExpenseViewModel) {
                     Icon(imageVector = Icons.Filled.Calculate, contentDescription = "Calculator Intent")
                     Spacer(modifier = Modifier.width(12.dp))
                     Column {
-                        Text(text = "Launch System Calculator", fontWeight = FontWeight.SemiBold)
-                        Text(text = "Uses Implicit System Intents to leave app", fontSize = 12.sp, color = MaterialTheme.colorScheme.outline)
+                        Text(text = "Launch Calculator", fontWeight = FontWeight.SemiBold)
                     }
                 }
             }
@@ -255,10 +270,12 @@ fun SettingsScreen(viewModel: ExpenseViewModel) {
     }
 }
 
-//creates the template
+//creates the template for the popup
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AddTemplateDialog(currencySymbol: String, onDismiss: () -> Unit, onSave: (String, Double, String) -> Unit) {
+
+    //stores input
     var title by remember { mutableStateOf("") }
     var amount by remember { mutableStateOf("") }
     var category by remember { mutableStateOf("Food") }
@@ -267,8 +284,8 @@ fun AddTemplateDialog(currencySymbol: String, onDismiss: () -> Unit, onSave: (St
     val categories = listOf("Food", "Transport", "Entertainment", "Rent", "Shopping", "Other")
 
     AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text("New Recurring Template") },
+        onDismissRequest = onDismiss, //closes the dialog
+        title = { Text("New Recurring Expense") },
         text = {
             Column {
                 OutlinedTextField(value = title, onValueChange = { title = it }, label = { Text("Title (e.g. Netflix)") })
@@ -276,6 +293,7 @@ fun AddTemplateDialog(currencySymbol: String, onDismiss: () -> Unit, onSave: (St
                 OutlinedTextField(value = amount, onValueChange = { amount = it }, label = { Text("Amount ($currencySymbol)") })
                 Spacer(modifier = Modifier.height(8.dp))
 
+                //dropdown logic
                 ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = { expanded = !expanded }) {
                     OutlinedTextField(
                         value = category,
@@ -290,6 +308,8 @@ fun AddTemplateDialog(currencySymbol: String, onDismiss: () -> Unit, onSave: (St
                         }
                     }
                 }
+
+                //shows custom categroy if selected
                 if (category == "Other") {
                     Spacer(modifier = Modifier.height(8.dp))
                     OutlinedTextField(value = customCategory, onValueChange = { customCategory = it }, label = { Text("Custom Category") })
@@ -300,6 +320,8 @@ fun AddTemplateDialog(currencySymbol: String, onDismiss: () -> Unit, onSave: (St
             Button(onClick = {
                 val parsedAmount = amount.toDoubleOrNull()
                 val finalCategory = if (category == "Other") customCategory else category
+
+                //checks for valid input
                 if (title.isNotBlank() && parsedAmount != null) {
                     onSave(title, parsedAmount, finalCategory)
                 }

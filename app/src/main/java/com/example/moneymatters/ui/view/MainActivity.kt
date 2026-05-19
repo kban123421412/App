@@ -36,7 +36,9 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.PeriodicWorkRequestBuilder
+import androidx.work.WorkManager.getInstance
 import com.example.moneymatters.util.DailyReminderWorker
+import com.example.moneymatters.util.NotificationHelper.createNotificationChannel
 import java.util.concurrent.TimeUnit
 
 class MainActivity : ComponentActivity() {
@@ -44,16 +46,17 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        //grabs saved preferences and checks if notifications are enabled
         val prefs = getSharedPreferences("app_prefs", android.content.Context.MODE_PRIVATE)
         val notificationsEnabled = prefs.getBoolean("notifications", true)
 
-        //creates the channel
-        com.example.moneymatters.util.NotificationHelper.createNotificationChannel(this)
+        //creates the notification channel
+        createNotificationChannel(this)
 
-        //daily reminder notification
+        /* Old code for daily reminder
         val dailyWorkRequest = PeriodicWorkRequestBuilder<DailyReminderWorker>(
             24, TimeUnit.HOURS
-        ).build()
+        ).build()*/
 
         // Check our saved settings before launching the background task
 
@@ -61,13 +64,13 @@ class MainActivity : ComponentActivity() {
             val dailyWorkRequest = PeriodicWorkRequestBuilder<DailyReminderWorker>(
                 24, TimeUnit.HOURS
             ).build()
-            androidx.work.WorkManager.getInstance(this).enqueueUniquePeriodicWork(
+            getInstance(this).enqueueUniquePeriodicWork(
                 "DailyReminder",
                 ExistingPeriodicWorkPolicy.KEEP,
                 dailyWorkRequest
             )
         } else {
-            androidx.work.WorkManager.getInstance(this).cancelUniqueWork("DailyReminder")
+            getInstance(this).cancelUniqueWork("DailyReminder") //stops task if notifications are off in app settings
         }
 
         setContent {
@@ -83,7 +86,7 @@ class MainActivity : ComponentActivity() {
                 lightColorScheme()
             }
 
-            MaterialTheme(colorScheme = dynamicColorScheme) {
+            MaterialTheme(colorScheme = dynamicColorScheme) { //applies the theme to whole app
                 MainScreenApp(expenseViewModel)
             }
         }
@@ -94,10 +97,12 @@ class MainActivity : ComponentActivity() {
 fun MainScreenApp(expenseViewModel: ExpenseViewModel) {
     val navController = rememberNavController()
 
+    //ask user for notification permission
     val permissionLauncher = rememberLauncherForActivityResult(
         contract  = ActivityResultContracts.RequestPermission(),
     ){isGranted ->}
 
+    //actually user asks for permission (the popup)
     LaunchedEffect(Unit){
         if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU){
             permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)

@@ -20,19 +20,20 @@ import java.util.Locale
 import java.util.UUID
 
 data class RecurringTemplate(val id: String, val title: String, val amount: Double, val category: String)
-
 class ExpenseViewModel(application: Application) : AndroidViewModel(application) {
 
     private val repository: ExpenseRepository
 
+    //<liveData> automatically updates the UI
     val allExpenses: LiveData<List<ExpenseModel>>
     val totalAmount: LiveData<Double>
     val categoryTotals: LiveData<List<CategoryTotal>>
     val allGoals: LiveData<List<GoalModel>>
 
-    //saves preferences
+    //saves preferences so they dont reset on app restart
     private val prefs = application.getSharedPreferences("app_prefs", android.content.Context.MODE_PRIVATE)
 
+    //holds current settings
     var isNotificationsEnabled by mutableStateOf(prefs.getBoolean("notifications", true))
     var isDarkMode by mutableStateOf(prefs.getBoolean("dark_mode", false))
     var currencySymbol by mutableStateOf(prefs.getString("currency", "£") ?: "£")
@@ -51,7 +52,7 @@ class ExpenseViewModel(application: Application) : AndroidViewModel(application)
         loadTemplates() //loads saved template on startup
     }
 
-    //reccuring expenses
+    //reccuring expenses functions
     private fun loadTemplates() {
         val savedSet = prefs.getStringSet("recurring_templates", emptySet()) ?: emptySet()
         recurringTemplates = savedSet.mapNotNull {

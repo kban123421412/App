@@ -9,8 +9,6 @@ import androidx.room.Room
 import com.example.moneymatters.data.dao.GoalDao
 import com.example.moneymatters.data.model.GoalModel
 
-
-
 @Database(entities = [ExpenseModel::class, GoalModel::class], version = 2, exportSchema = false)
 abstract class ExpenseDataBase: RoomDatabase() {
     abstract fun expenseDao(): ExpenseDao

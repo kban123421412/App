@@ -15,6 +15,7 @@ import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -22,6 +23,8 @@ import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.moneymatters.R
+import com.example.moneymatters.R.string.savings_goals
+import com.example.moneymatters.R.string.spending_category
 import com.example.moneymatters.data.model.GoalModel
 import com.example.moneymatters.data.model.ExpenseModel
 import com.example.moneymatters.ui.viewModel.ExpenseViewModel
@@ -32,7 +35,7 @@ import com.github.mikephil.charting.data.PieEntry
 import com.example.moneymatters.util.NotificationHelper.showGoalCompletedNotification
 import com.example.moneymatters.util.ReceiptExporter.shareReceipt
 
-// Tracks which time filter chip is currently selected
+// Tracks which time filter is currently selected
 enum class TimeFilter { ALL, WEEK, MONTH, YEAR }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -45,7 +48,7 @@ fun StatsScreen(viewModel: ExpenseViewModel) {
 
     // Observes all expenses to calculate the date filters locally
     val allExpenses by viewModel.allExpenses.observeAsState(emptyList())
-    val context = androidx.compose.ui.platform.LocalContext.current //context so we can send notification
+    val context = LocalContext.current //context so we can send notification
 
     var showAddGoalDialog by remember { mutableStateOf(false) }
     var selectedGoalForFunds by remember { mutableStateOf<GoalModel?>(null) }
@@ -102,11 +105,11 @@ fun StatsScreen(viewModel: ExpenseViewModel) {
             item {
                 Spacer(modifier = Modifier.height(16.dp))
 
-                //title for donut chart
+                //old hardcoded title for donut chart
                 // Text("Spending by Category", fontSize = 20.sp, fontWeight = FontWeight.Bold)
 
                 Text(
-                    stringResource(id = R.string.spending_category),
+                    stringResource(id = spending_category),
                     fontSize = 20.sp,
                     fontWeight = FontWeight.Bold
                 )
@@ -213,7 +216,7 @@ fun StatsScreen(viewModel: ExpenseViewModel) {
                 //Text("My Savings Goals", fontSize = 20.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(bottom = 8.dp))
 
                 Text(
-                    stringResource(id = R.string.savings_goals),
+                    stringResource(id = savings_goals),
                     fontSize = 20.sp,
                     fontWeight = FontWeight.Bold,
                     modifier = Modifier.padding(bottom = 8.dp)
@@ -251,13 +254,15 @@ fun StatsScreen(viewModel: ExpenseViewModel) {
             goal = goal,
             onDismiss = { selectedGoalForFunds = null },
             onSave = { amountToAdd ->
-                //goal.currentAmount += amountToAdd <-- changed this as goals would not update after you add a fund to it
+
+                //goal.currentAmount += amountToAdd <-- changed this as goals would not update after you added funds to it
                 val updatedGoal = goal.copy(currentAmount = goal.currentAmount + amountToAdd)
                 viewModel.updateGoal(updatedGoal)
 
                 //checks if goal is completed
                 if(updatedGoal.currentAmount >= updatedGoal.targetAmount && goal.currentAmount < goal.targetAmount){
-                    // NEW: Check if notifications are enabled before showing the popup!
+
+                    //checks if notifications are enabled before showing popup
                     if (viewModel.isNotificationsEnabled) {
                         showGoalCompletedNotification(context, updatedGoal.title)
                     }
@@ -340,8 +345,9 @@ fun GoalItemCard(goal: GoalModel, onClick: () -> Unit, currencySymbol: String) {
     }
 }
 
+//Both Add Goal and Add Funds dialogs are essesntially the same.
 @Composable
-fun AddGoalDialog(onDismiss: () -> Unit, onSave: (GoalModel) -> Unit) {
+fun AddGoalDialog(onDismiss: () -> Unit, onSave: (GoalModel) -> Unit, currencySymbol: String) {
     var title by remember { mutableStateOf("") }
     var target by remember { mutableStateOf("") }
 
@@ -352,8 +358,8 @@ fun AddGoalDialog(onDismiss: () -> Unit, onSave: (GoalModel) -> Unit) {
             Column {
                 OutlinedTextField(value = title, onValueChange = { title = it }, label = { Text("Goal Title") })
                 Spacer(modifier = Modifier.height(8.dp))
-                OutlinedTextField(value = target, onValueChange = { target = it }, label = { Text("Target Amount (£)") })
-            }
+                OutlinedTextField(value = target, onValueChange = { target = it }, label = { Text("Target Amount ${currencySymbol}") }) //previoulsy was £
+            }                                                                                                                                 // changed to uses currencySymbol in all add ___ dialogs
         },
         confirmButton = {
             Button(onClick = {
@@ -372,26 +378,35 @@ fun AddGoalDialog(onDismiss: () -> Unit, onSave: (GoalModel) -> Unit) {
 }
 
 @Composable
-fun AddFundsDialog(goal: GoalModel, onDismiss: () -> Unit, onSave: (Double) -> Unit) {
+fun AddFundsDialog(goal: GoalModel, onDismiss: () -> Unit, onSave: (Double) -> Unit, currencySymbol: String) {
+
+    //stores input
     var amount by remember { mutableStateOf("") }
 
+    //popup to add funds to the goal
     AlertDialog(
-        onDismissRequest = onDismiss,
+        onDismissRequest = onDismiss, //closes without saving
         title = { Text("Add Funds to ${goal.title}") },
         text = {
             OutlinedTextField(
                 value = amount,
                 onValueChange = { amount = it },
-                label = { Text("Amount to Add (£)") })
+                label = { Text("Amount to Add ${currencySymbol}") })
         },
+
+        //save button
         confirmButton = {
             Button(onClick = {
-                val parsedAmount = amount.toDoubleOrNull()
+                val parsedAmount = amount.toDoubleOrNull() //text to decimal
+
+                //checks if input is valid
                 if (parsedAmount != null && parsedAmount > 0) {
                     onSave(parsedAmount)
                 }
             }) { Text("Add") }
         },
+
+        //cancel button
         dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } }
     )
   }

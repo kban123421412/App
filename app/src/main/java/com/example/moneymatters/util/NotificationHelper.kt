@@ -13,8 +13,11 @@ object NotificationHelper {
 
     fun createNotificationChannel(context: Context) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val name = "Money Matters Notifications" //app name
+
+            //app name and description in phone settings
+            val name = "Money Matters Notifications"
             val descriptionText = "Reminders and Goal Updates"
+
             val importance = NotificationManager.IMPORTANCE_DEFAULT
             val channel = NotificationChannel(CHANNEL_ID, name, importance).apply {
                 description = descriptionText
@@ -25,10 +28,13 @@ object NotificationHelper {
         }
     }
 
+    //when goal is completed sends notification
     fun showGoalCompletedNotification(context: Context, goalTitle: String) {
+
+        //builds the actual notification
         val builder = NotificationCompat.Builder(context, CHANNEL_ID)
             .setSmallIcon(R.mipmap.ic_launcher_round)
-            .setContentTitle("Goal Completed! \uD83C\uDF89")
+            .setContentTitle("Goal Completed! \uD83C\uDF89") //🎉
             .setContentText("Congratulations! You reached your goal for: $goalTitle")
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setAutoCancel(true)

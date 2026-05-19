@@ -26,7 +26,7 @@ fun ExpenseListScreen(viewModel: ExpenseViewModel, currencySymbol: String) {
     //observes the room db
     val expense by viewModel.allExpenses.observeAsState(emptyList())
     val totalAmount by viewModel.totalAmount.observeAsState()
-    val safeTotalAmount = totalAmount ?: 0.0 //added safeTotalAmount due to app crashing on launch as the room db as null is returned
+    val safeTotalAmount = totalAmount ?: 0.0 //added safeTotalAmount due to app crashing on launch as the room db returns null if empty
     var showDialog by remember { mutableStateOf(false) }
 
     //scafold to show basic screen structure
@@ -39,12 +39,15 @@ fun ExpenseListScreen(viewModel: ExpenseViewModel, currencySymbol: String) {
             }
         }
     ) { paddingValues ->
+
+        //main column that holds all UI components
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
                 .padding(16.dp)
         ) {
+
             //Displays total expense
             Text(
                 text = String.format("Total: ${currencySymbol}%.2f", safeTotalAmount), //changed from totalAmount to safeTotalAmount
@@ -53,7 +56,7 @@ fun ExpenseListScreen(viewModel: ExpenseViewModel, currencySymbol: String) {
                 modifier = Modifier.padding(bottom = 16.dp)
             )
 
-
+            //lazy column to show all expenses
             LazyColumn(
                 modifier = Modifier.fillMaxSize()
             ) {
@@ -73,6 +76,7 @@ fun ExpenseListScreen(viewModel: ExpenseViewModel, currencySymbol: String) {
     //Shows the actual popup when showDialog is true
     if (showDialog){
         AddExpenseDialog(
+            currencySymbol = currencySymbol,
             onDismiss = { showDialog = false },
             onSave = { expense ->
 
@@ -85,6 +89,7 @@ fun ExpenseListScreen(viewModel: ExpenseViewModel, currencySymbol: String) {
 
     }
 
+//layout for each expense
 @Composable
 fun ExpenseItemCard(expense: ExpenseModel, onDelete: (ExpenseModel) -> Unit , currencySymbol: String) {
     Card(
@@ -107,6 +112,7 @@ fun ExpenseItemCard(expense: ExpenseModel, onDelete: (ExpenseModel) -> Unit , cu
                 Text(text = "${expense.category} • ${expense.date}", color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
 
+            //shows amount and trash button
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(text = String.format("${currencySymbol}%.2f", expense.amount), fontWeight = FontWeight.Bold, fontSize = 18.sp)
                 IconButton(onClick = { onDelete(expense) }) {
@@ -117,6 +123,7 @@ fun ExpenseItemCard(expense: ExpenseModel, onDelete: (ExpenseModel) -> Unit , cu
     }
 }
 
+//popup for adding new expense
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AddExpenseDialog(onDismiss: () -> Unit, onSave: (ExpenseModel) -> Unit) {
@@ -126,6 +133,7 @@ fun AddExpenseDialog(onDismiss: () -> Unit, onSave: (ExpenseModel) -> Unit) {
     var amount by remember { mutableStateOf("") }
     var category by remember { mutableStateOf("Food") }
     var customCategory by remember { mutableStateOf("") }
+
     var expanded by remember { mutableStateOf(false) }
     val categories = listOf("Food", "Transport", "Entertainment", "Rent", "Shopping", "Other")
 
@@ -138,10 +146,10 @@ fun AddExpenseDialog(onDismiss: () -> Unit, onSave: (ExpenseModel) -> Unit) {
             Column {
                 OutlinedTextField(value = title, onValueChange = { title = it }, label = { Text("Title") })
                 Spacer(modifier = Modifier.height(8.dp))
-                OutlinedTextField(value = amount, onValueChange = { amount = it }, label = { Text("Amount (£)") })
+                OutlinedTextField(value = amount, onValueChange = { amount = it }, label = { Text("Amount ($currencySymbol)") })
                 Spacer(modifier = Modifier.height(8.dp))
 
-                // Dropdown Menu
+                //dropdown Menu
                 ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = { expanded = !expanded }) {
                     OutlinedTextField(
                         value = category,
@@ -155,6 +163,7 @@ fun AddExpenseDialog(onDismiss: () -> Unit, onSave: (ExpenseModel) -> Unit) {
                             DropdownMenuItem(
                                 text = { Text(selection) },
                                 onClick = {
+                                    //saves the category
                                     category = selection
                                     expanded = false
                                 }
@@ -162,6 +171,8 @@ fun AddExpenseDialog(onDismiss: () -> Unit, onSave: (ExpenseModel) -> Unit) {
                         }
                     }
                 }
+
+                //only shows custom category if other selected
                 if (category == "Other") {
                     Spacer(modifier = Modifier.height(8.dp))
                     OutlinedTextField(
@@ -181,7 +192,7 @@ fun AddExpenseDialog(onDismiss: () -> Unit, onSave: (ExpenseModel) -> Unit) {
                 val finalCategory = if(category == "Other") customCategory else category
                 if (title.isNotBlank() && parsedAmount != null) {
                     val date = SimpleDateFormat("dd MM yyyy", Locale.getDefault()).format(Date())
-                    onSave(ExpenseModel(title = title, amount = parsedAmount, category = category, date = date))
+                    onSave(ExpenseModel(title = title, amount = parsedAmount, category = finalCategory, date = date))
                 }
             }) { Text("Save") }
         },
