@@ -30,8 +30,6 @@ class ExpenseContentProvider : ContentProvider() {
 
         return when (uriMatcher.match(uri)) {
             EXPENSES -> {
-
-                //gets db and calls cursor function
                 val db = ExpenseDataBase.getDatabase(context)
                 db.expenseDao().getAllExpenseCursor()
             }

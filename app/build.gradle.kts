@@ -58,7 +58,7 @@ dependencies {
     implementation("androidx.compose.runtime:runtime-livedata") // Allows Compose to read Room LiveData
     implementation("androidx.compose.material:material-icons-extended") // For UI Icons
 
-    // 3rd Party Chart -> donut chart
+    // Donut chart
     implementation("com.github.PhilJay:MPAndroidChart:v3.1.0")
 
     // WorkManager (Notifications)

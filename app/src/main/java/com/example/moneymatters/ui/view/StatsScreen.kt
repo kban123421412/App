@@ -86,7 +86,6 @@ fun StatsScreen(viewModel: ExpenseViewModel) {
         }
     }
 
-    //scaffold for screen structure and buttons
     Scaffold(
         floatingActionButton = {
             FloatingActionButton(onClick = { showAddGoalDialog = true }) { //opens add goal dialog
@@ -95,7 +94,6 @@ fun StatsScreen(viewModel: ExpenseViewModel) {
         }
     ) { paddingValues ->
 
-        //lazy column for the list of expenses
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
@@ -105,16 +103,13 @@ fun StatsScreen(viewModel: ExpenseViewModel) {
             item {
                 Spacer(modifier = Modifier.height(16.dp))
 
-                //old hardcoded title for donut chart
-                // Text("Spending by Category", fontSize = 20.sp, fontWeight = FontWeight.Bold)
-
                 Text(
                     stringResource(id = spending_category),
                     fontSize = 20.sp,
                     fontWeight = FontWeight.Bold
                 )
 
-                // Time Filter Selection Buttons
+                // Time Filter Buttons
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -127,7 +122,7 @@ fun StatsScreen(viewModel: ExpenseViewModel) {
                     FilterChip(selected = selectedFilter == TimeFilter.YEAR, onClick = { selectedFilter = TimeFilter.YEAR }, label = { Text("Year") })
                 }
 
-                //3rd party chart -> donut chart but within jetpack compose
+                //donut chart
                 AndroidView(
                     modifier = Modifier
                         .fillMaxWidth()

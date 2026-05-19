@@ -3,7 +3,6 @@ package com.example.moneymatters.data.model
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 
-//creates expense table
 @Entity(tableName = "ExpenseModel")
 data class ExpenseModel(
     @PrimaryKey

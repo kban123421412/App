@@ -26,10 +26,9 @@ fun ExpenseListScreen(viewModel: ExpenseViewModel, currencySymbol: String) {
     //observes the room db
     val expense by viewModel.allExpenses.observeAsState(emptyList())
     val totalAmount by viewModel.totalAmount.observeAsState()
-    val safeTotalAmount = totalAmount ?: 0.0 //added safeTotalAmount due to app crashing on launch as the room db returns null if empty
+    val safeTotalAmount = totalAmount ?: 0.0
     var showDialog by remember { mutableStateOf(false) }
 
-    //scafold to show basic screen structure
     Scaffold(
 
         //Add expense button
@@ -40,7 +39,7 @@ fun ExpenseListScreen(viewModel: ExpenseViewModel, currencySymbol: String) {
         }
     ) { paddingValues ->
 
-        //main column that holds all UI components
+        //main column
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -61,7 +60,7 @@ fun ExpenseListScreen(viewModel: ExpenseViewModel, currencySymbol: String) {
                 modifier = Modifier.fillMaxSize()
             ) {
 
-                //Creates the cards for each expense
+                //cards for each expense
                 items(expense) {expense ->
                     ExpenseItemCard(
                         expense = expense,

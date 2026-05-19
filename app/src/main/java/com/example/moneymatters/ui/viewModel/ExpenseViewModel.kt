@@ -24,21 +24,17 @@ class ExpenseViewModel(application: Application) : AndroidViewModel(application)
 
     private val repository: ExpenseRepository
 
-    //<liveData> automatically updates the UI
     val allExpenses: LiveData<List<ExpenseModel>>
     val totalAmount: LiveData<Double>
     val categoryTotals: LiveData<List<CategoryTotal>>
     val allGoals: LiveData<List<GoalModel>>
 
-    //saves preferences so they dont reset on app restart
+    //user settings
     private val prefs = application.getSharedPreferences("app_prefs", android.content.Context.MODE_PRIVATE)
-
-    //holds current settings
     var isNotificationsEnabled by mutableStateOf(prefs.getBoolean("notifications", true))
     var isDarkMode by mutableStateOf(prefs.getBoolean("dark_mode", false))
     var currencySymbol by mutableStateOf(prefs.getString("currency", "£") ?: "£")
 
-    //state list for recurring templates
     var recurringTemplates by mutableStateOf<List<RecurringTemplate>>(emptyList())
 
     init {
@@ -49,7 +45,7 @@ class ExpenseViewModel(application: Application) : AndroidViewModel(application)
         categoryTotals = repository.categoryTotals
         allGoals = repository.allGoals
 
-        loadTemplates() //loads saved template on startup
+        loadTemplates()
     }
 
     //reccuring expenses functions
@@ -105,7 +101,6 @@ class ExpenseViewModel(application: Application) : AndroidViewModel(application)
     fun insertGoal(goal: GoalModel) = viewModelScope.launch(Dispatchers.IO){ repository.insertGoal(goal) }
     fun updateGoal(goal: GoalModel) = viewModelScope.launch(Dispatchers.IO){ repository.updateGoal(goal) }
 
-    // Automation function to instantaneously inject recurring subscriptions into the DB
     fun logAutomaticExpense(title: String, amount: Double, category: String) = viewModelScope.launch(Dispatchers.IO) {
         val currentDate = SimpleDateFormat("dd MM yyyy", Locale.getDefault()).format(Date())
         val automaticExpense = ExpenseModel(

@@ -7,7 +7,6 @@ import android.os.Build
 import androidx.core.app.NotificationCompat
 import com.example.moneymatters.R
 
-//handles all app notificaations
 object NotificationHelper {
     private const val CHANNEL_ID = "money_matters_channel"
 

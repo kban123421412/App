@@ -46,19 +46,9 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        //grabs saved preferences and checks if notifications are enabled
         val prefs = getSharedPreferences("app_prefs", android.content.Context.MODE_PRIVATE)
         val notificationsEnabled = prefs.getBoolean("notifications", true)
-
-        //creates the notification channel
         createNotificationChannel(this)
-
-        /* Old code for daily reminder
-        val dailyWorkRequest = PeriodicWorkRequestBuilder<DailyReminderWorker>(
-            24, TimeUnit.HOURS
-        ).build()*/
-
-        // Check our saved settings before launching the background task
 
         if (notificationsEnabled) {
             val dailyWorkRequest = PeriodicWorkRequestBuilder<DailyReminderWorker>(
@@ -70,7 +60,9 @@ class MainActivity : ComponentActivity() {
                 dailyWorkRequest
             )
         } else {
-            getInstance(this).cancelUniqueWork("DailyReminder") //stops task if notifications are off in app settings
+
+            //stops task if notifications are off in app settings
+            getInstance(this).cancelUniqueWork("DailyReminder")
         }
 
         setContent {
@@ -109,7 +101,6 @@ fun MainScreenApp(expenseViewModel: ExpenseViewModel) {
         }
     }
 
-    //scaffold for bottom bar
     Scaffold(
         bottomBar = { BottomNavigationBar(navController) }
     ) { innerPadding ->
