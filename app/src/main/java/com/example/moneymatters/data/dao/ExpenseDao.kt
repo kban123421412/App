@@ -29,4 +29,7 @@ interface ExpenseDao {
     @Query("SELECT category, SUM(amount) as total FROM ExpenseModel GROUP BY category")
     fun getCategoryTotal(): LiveData<List<CategoryTotal>>
 
+
+    @Query("SELECT * FROM ExpenseModel ORDER BY ID DESC")
+    fun getAllExpenseCursor(): android.database.Cursor
 }

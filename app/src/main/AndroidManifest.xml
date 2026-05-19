@@ -44,6 +44,12 @@
                 android:resource="@xml/file_paths" />
         </provider>
 
+        <provider
+            android:name=".provider.ExpenseContentProvider"
+            android:authorities="com.example.moneymatters.provider"
+            android:exported="true"
+        <provider/>
+
     </application>
 
 </manifest>
