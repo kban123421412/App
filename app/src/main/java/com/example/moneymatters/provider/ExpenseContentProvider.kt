@@ -33,7 +33,7 @@ class ExpenseContentProvider : ContentProvider() {
 
                 //gets db and calls cursor function
                 val db = ExpenseDataBase.getDatabase(context)
-                db.expenseDao().getAllExpensesCursor()
+                db.expenseDao().getAllExpenseCursor()
             }
             else -> throw IllegalArgumentException("Unknown URI: $uri")
         }

@@ -47,8 +47,7 @@
         <provider
             android:name=".provider.ExpenseContentProvider"
             android:authorities="com.example.moneymatters.provider"
-            android:exported="true"
-        <provider/>
+            android:exported="true"/>
 
     </application>
 
