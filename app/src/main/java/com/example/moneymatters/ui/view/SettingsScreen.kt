@@ -45,7 +45,7 @@ fun SettingsScreen(viewModel: ExpenseViewModel) {
 
         //Sytem Controls Section
         Text(text = "Preferences", fontSize = 16.sp, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.SemiBold)
-        Card(modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)) { //puts all preferences into 1 card
+        Card(modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)) {
             Column(modifier = Modifier.padding(16.dp)) {
 
                 //Notifications Row
